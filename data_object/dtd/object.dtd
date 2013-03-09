@@ -1,0 +1,56 @@
+<!ATTLIST object name CDATA #REQUIRED />
+<!ELEMENT object (fields+, fields_external*, tables+, tables_external+, arrays+, methods+) />
+
+<!ELEMENT fields (field+) />
+	<!ATTLIST field name CDATA #REQUIRED /> 	<!-- Nom del field, l'associacio a la BBDD -->
+	<!ATTLIST field type CDATA #REQUIRED /> 	<!-- Tipus del field, Tipus de camp a la BBDD -->
+	<!ATTLIST field cardinal CDATA #IMPLIED /> 	<!-- Els espais reservats a la BBDD per aquest tipus, Unicament en varchar -->
+	<!ATTLIST field null CDATA #REQUIRED /> 	<!-- Si el camp pot ser null, implica que cal que tingui valor, per tant serà requerit -->
+	<!ATTLIST field default CDATA #IMPLIED />	<!-- Valor per defecte en cas que no es fixi cap valor -->
+	<!ATTLIST field text CDATA #REQUIRED />		<!-- Text descriptiu del field -->
+	<!ELEMENT field (field_value*) /> 			<!-- Conjunt de valors posibles. Unicament en type="enum" -->
+		<!ATTLIST field_value name CDATA #REQUIRED />	<!-- El nom identificatiu del valor del camp -->
+		<!ATTLIST field_value value CDATA #REQUIRED />	<!-- El valor propiament dit -->
+		<!ATTLIST field_value text CDATA #REQUIRED />	<!-- Text descriptiu del valor -->
+
+<!ELEMENT fields_external (field_external+) />
+	<!ATTLIST field_external name CDATA #REQUIRED />
+	<!ATTLIST field_external object CDATA #REQUIRED />
+	<!ATTLIST field_external table CDATA #REQUIRED />
+	<!ATTLIST field_external field CDATA #REQUIRED />
+	<!ATTLIST field_external text CDATA #REQUIRED />
+
+<!ELEMENT tables (table+) />
+	<!ATTLIST table name CDATA #REQUIRED />
+	<!ATTLIST table fields CDATA #REQUIRED />
+	<!ATTLIST table pkey CDATA #IMPLIED />
+	<!ATTLIST table ikey CDATA #IMPLIED />
+	<!ATTLIST table ukey CDATA #IMPLIED />
+	<!ATTLIST table autoincrement CDATA #IMPLIED />
+
+<!ELEMENT tables_external (table_external+) />
+	<!ATTLIST table_external name CDATA #REQUIRED />
+	<!ATTLIST table_external object CDATA #REQUIRED />
+
+<!ELEMENT arrays (array+) />
+	<!ATTLIST array name CDATA #REQUIRED /> 	<!-- Nom del field, l'associacio a la BBDD -->
+	<!ATTLIST array fields CDATA #REQUIRED /> 	<!-- Variables separades per commas que integren l'array -->
+
+<!ELEMENT methods (method+) />
+<!ELEMENT method (input*, store_input*, get_var*, store_output*, set_var*, output*) />
+	<!ATTLIST input object CDATA #REQUIRED />
+	<!ATTLIST input field CDATA #REQUIRED />
+	<!ATTLIST store_input object CDATA #REQUIRED />
+	<!ATTLIST store_input table CDATA #REQUIRED />
+	<!ATTLIST store_input action CDATA #REQUIRED />
+	<!ATTLIST store_input field CDATA #REQUIRED />
+	<!ATTLIST get_var object CDATA #REQUIRED />
+	<!ATTLIST get_var fields CDATA #REQUIRED />
+	<!ATTLIST store_output object CDATA #REQUIRED />
+	<!ATTLIST store_output table CDATA #REQUIRED />
+	<!ATTLIST store_output action CDATA #REQUIRED />
+	<!ATTLIST store_output field CDATA #REQUIRED />
+	<!ATTLIST set_var object CDATA #REQUIRED />
+	<!ATTLIST set_var fields CDATA #REQUIRED />
+	<!ATTLIST output object CDATA #REQUIRED />
+	<!ATTLIST output field CDATA #REQUIRED />
