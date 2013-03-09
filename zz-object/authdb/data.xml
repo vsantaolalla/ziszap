@@ -1,0 +1,31 @@
+<object name="authdb">
+<fields>
+	<field name="usuid" type="int" cardinal="11" null="no" text="ID usuario"/>
+	<field name="usulgn" type="varchar" default="0" cardinal="30" null="no" text="Nombre del usuario" />
+	<field name="usupwd" type="varchar" default="0" cardinal="50" null="no" text="Password del usuario" />
+	<field name="usuema" type="varchar" default="0" cardinal="40" null="no" text="E-Mail del usuario registrado" />
+</fields>
+<tables>
+	<table name="zUser" fields="usuid,usulgn,usupwd,usuema" pkey="usuid" ikey="usuid" ukey="usuid" autoincrement="usuid" />
+</tables>
+<methods>
+	<method name="auth_user" object="authdb" function="login">
+		<input object="authdb" field="usulgn,usupwd" />
+		<store_input object="authdb" table="zUser" action="scan" field="usulgn" />
+		<store_output object="authdb" table="zUser" action="read" field="usulgn,usupwd" />
+	</method>
+	<method name="lost_pwd_user" object="authdb" function="lostpwd">
+		<input object="authdb" field="usulgn,usuema" />
+		<store_input object="authdb" table="zUser" action="scan" field="usuema" />
+		<store_output object="authdb" table="zUser" action="read" field="usulgn,usuema" />
+	</method>
+	<method name="new_user" object="authdb" function="create_object">
+		<input object="authdb" field="usulgn,usupwd,usuema" />
+		<store_input object="authdb" table="zUser" action="scan" field="usulgn" />
+		<store_output object="authdb" table="zUser" action="create" field="usulgn,usupwd,usuema" />
+	</method>
+	<method name="logout" object="authdb" function="logout">
+		<store_input object="authdb" table="zUser" action="read" field="usulgn" />
+	</method>
+</methods>
+</object>
