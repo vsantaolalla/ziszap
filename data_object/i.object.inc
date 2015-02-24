@@ -8,7 +8,6 @@
 //
 
 require_once("zz-admin/config.php");
-//require_once("db.mysql.inc");
 
 
 abstract class Object {
