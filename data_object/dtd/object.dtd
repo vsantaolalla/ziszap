@@ -1,0 +1,75 @@
+<!ATTLIST object name CDATA #REQUIRED />
+<!ELEMENT object (fields+, fields_external*, tables+, tables_external*, arrays*, methods+, interfaces*) />
+
+<!ELEMENT fields (field+) />
+	<!ATTLIST field name CDATA #REQUIRED /> 	<!-- Nom del field, l'associacio a la BBDD -->
+	<!ATTLIST field type CDATA #REQUIRED /> 	<!-- Tipus del field, Tipus de camp a la BBDD -->
+	<!ATTLIST field enum_type CDATA #IMPLIED />	<!-- En cas de que el type sigui multivalor definim el tipus dels valors -->
+	<!ATTLIST field cardinal CDATA #IMPLIED /> 	<!-- Els espais reservats a la BBDD per aquest tipus, Unicament en varchar -->
+	<!ATTLIST field null CDATA #REQUIRED /> 	<!-- Si el camp pot ser null, implica que cal que tingui valor, per tant serà requerit -->
+	<!ATTLIST field default CDATA #IMPLIED />	<!-- Valor per defecte en cas que no es fixi cap valor -->
+	<!ATTLIST field text CDATA #REQUIRED />		<!-- Text descriptiu del field -->
+	<!ELEMENT field (field_value*) /> 			<!-- Conjunt de valors posibles. Unicament en type="enum" -->
+		<!ATTLIST field_value name CDATA #REQUIRED />	<!-- El nom identificatiu del valor del camp -->
+		<!ATTLIST field_value value CDATA #REQUIRED />	<!-- El valor propiament dit -->
+		<!ATTLIST field_value text CDATA #REQUIRED />	<!-- Text descriptiu del valor -->
+
+<!ELEMENT fields_external (field_external+) />	<!-- Fields creuats on fa referencia a fields que estan en altres objectes -->
+	<!ATTLIST field_external name CDATA #REQUIRED />	<!-- Nom del field al que cridem externament -->
+	<!ATTLIST field_external object CDATA #REQUIRED />	<!-- Objecte al que fa referencia -->
+	<!ATTLIST field_external table CDATA #REQUIRED />	<!-- Taula de la base de dades del que fa referencia -->
+	<!ATTLIST field_external field CDATA #REQUIRED />	<!-- Nom del field en el origen -->
+	<!ATTLIST field_external text CDATA #REQUIRED />	<!-- Text descriptiu del valor -->
+
+<!ELEMENT tables (table+) />	<!-- Taula on s'allotjen els fields que integra la base de dades -->
+	<!ATTLIST table name CDATA #REQUIRED />		<!-- Nom de la taula de la BBDD -->
+	<!ATTLIST table fields CDATA #REQUIRED />	<!-- Fields que composen la BBDD -->
+	<!ATTLIST table pkey CDATA #IMPLIED />		<!-- Primary key de la base de dades -->
+	<!ATTLIST table ikey CDATA #IMPLIED />		<!-- Fields que formarem els indexos -->
+	<!ATTLIST table ukey CDATA #IMPLIED />		<!-- Fields que definim que han de ser unics -->
+	<!ATTLIST table autoincrement CDATA #IMPLIED />		<!-- Definim el field que fara de autoincrement -->
+
+<!ELEMENT tables_external (table_external+) />	<!-- Taules creuades on fa referencia a taules que estan en altres objectes -->
+	<!ATTLIST table_external name CDATA #REQUIRED />	<!-- Nom de la taula a la que cridem externament -->
+	<!ATTLIST table_external object CDATA #REQUIRED />	<!-- Objecte al que fa referencia -->
+
+<!ELEMENT arrays (array+) />
+	<!ATTLIST array name CDATA #REQUIRED /> 	<!-- Nom del field, l'associacio al objecte -->
+	<!ATTLIST array fields CDATA #REQUIRED /> 	<!-- Variables separades per commas que integren l'array -->
+
+<!ELEMENT methods (method+) />
+<!ELEMENT method (access*, noaccess*, input*, store_input*, get_var*, store_output*, set_var*, output*) />
+	<!ATTLIST access group CDATA #IMPLIED />
+	<!ATTLIST access user CDATA #IMPLIED />
+	<!ATTLIST noaccess group CDATA #IMPLIED />
+	<!ATTLIST noaccess user CDATA #IMPLIED />
+	<!ATTLIST input object CDATA #REQUIRED />
+	<!ATTLIST input field CDATA #REQUIRED />
+	<!ATTLIST store_input object CDATA #REQUIRED />
+	<!ATTLIST store_input table CDATA #REQUIRED />
+	<!ATTLIST store_input action CDATA #REQUIRED />
+	<!ATTLIST store_input field CDATA #REQUIRED />
+	<!ATTLIST get_var object CDATA #REQUIRED />
+	<!ATTLIST get_var array CDATA #IMPLIED />
+	<!ATTLIST get_var field CDATA #REQUIRED />
+	<!ATTLIST store_output object CDATA #REQUIRED />
+	<!ATTLIST store_output table CDATA #REQUIRED />
+	<!ATTLIST store_output action CDATA #REQUIRED />
+	<!ATTLIST store_output field CDATA #REQUIRED />
+	<!ATTLIST set_var object CDATA #REQUIRED />
+	<!ATTLIST set_var array CDATA #REQUIRED />
+	<!ATTLIST set_var field CDATA #REQUIRED />
+	<!ATTLIST output object CDATA #REQUIRED />
+	<!ATTLIST output field CDATA #REQUIRED />
+
+<!ELEMENT transactions (transaction+) />
+<!ELEMENT transaction (subtransaction+) />
+	<!ATTLIST transaction name CDATA #REQUIRED />
+	<!ATTLIST subtransaction name CDATA #REQUIRED />
+	<!ATTLIST subtransaction back CDATA #REQUIRED />
+
+<!ELEMENT interfaces (interface+) />
+	<!ATTLIST interface name CDATA #REQUIRED />
+	<!ATTLIST interface method CDATA #REQUIRED />
+	<!ATTLIST interface export CDATA #IMPLIED />
+ 
