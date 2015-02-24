@@ -8,6 +8,7 @@
 //
 
 require_once("zz-admin/config.php");
+//require_once("db.mysql.inc");
 
 
 abstract class Object {
@@ -456,7 +457,10 @@ abstract class Object {
 			}
 			if (isset($data_out[$value])) $fieldsSET .= $value." = '".mysql_real_escape_string($data_out[$value])."'";
 			else {
-				if (in_array($value, $this->fieldsRequired)) return FALSE;
+				if (in_array($value, $this->fieldsRequired)) {
+					$this->object_error("Not enought fields was required in sql_write");
+					return FALSE;
+				}
 				else $fieldsSET .= $value." = ''";
 			}
 		}
