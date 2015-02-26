@@ -1,7 +1,12 @@
 <?
+	error_reporting(E_ALL);
+	ini_set("display_startup_errors",1);
+	ini_set("display_errors",1);
+
+	require_once "config.php";
 	require_once "data_object/db.mysql.inc";
 	require_once "data_object/o.module.inc";
-	require_once "zz-admin/config.php";
+	require_once "data_object/o.console.inc";
 
 class rr extends database_object {
 	public $classname = "alertes";
@@ -26,7 +31,9 @@ class rr extends database_object {
 	
 	$p_input = Array();
 	$p_output = Array();
-	$m->create_class($_GET["class"]);
-	$m->create_init($_GET["class"]);
-	$m->create_test($_GET["class"]);
+	if (isset($_GET["class"])) {
+		$m->create_class($_GET["class"]);
+		$m->create_init($_GET["class"]);
+		$m->create_test($_GET["class"]);
+	}
 ?>
