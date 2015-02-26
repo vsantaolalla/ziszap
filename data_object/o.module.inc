@@ -21,7 +21,7 @@ class object_module extends generical_object {
 	}
 	
 	function create_init ($object) {
-		$path = $GLOBALS["_SERVER"]["DOCUMENT_ROOT"]."/zz-object/".$object."/init.php";
+		$path = get_directory()."/zz-object/".$object."/init.php";
 		$object_class = $object;
 		global $clase;
 		global $clase_init;
@@ -104,7 +104,7 @@ class object_module extends generical_object {
 		global $clase;
 		global $GLOBALS;
 		
-		$path = $GLOBALS["_SERVER"]["DOCUMENT_ROOT"]."/zz-object/".$object."/class.php";
+		$path = get_directory()."/zz-object/".$object."/class.php";
 		$object_class = "z_".$object;
 		$data = "<?php \n";
 		$data .= "require_once \"data_object/i.object.inc\";\n\n";
@@ -462,7 +462,7 @@ class object_module extends generical_object {
 	function create_test ($object) {
 		global $GLOBALS;
 		
-		$path = $GLOBALS["_SERVER"]["DOCUMENT_ROOT"]."/zz-object/".$object."/test.php";
+		$path = get_directory()."/zz-object/".$object."/test.php";
 		if (! class_exists($object)) { 
 			// Recreamos la variable de $cmd para generar l'objecte.
 			$cmd = "class ".$object." extends generical_object {\n\tvar \$classname = \"".$object."\";\n }\n";

@@ -6,5 +6,6 @@
 	$database_name = "ziszap";
 	$func_debug = true;
 
-	ini_set('include_path', $GLOBALS["_SERVER"]["DOCUMENT_ROOT"]);
+	$_ziszap_dir = "/tmp/rr/myzip";
+	ini_set('include_path', $_ziszap_dir);
 ?>

@@ -1,14 +1,24 @@
 <?
 
 //
-// Nynpha Multimedia Portal System Directories.
+// Ziszap Portal System Objects.
 //
-// Sistema de directorios. API para el acceso a trav�s del portal de todos los accesos
-// a traves de LDAP, en concretp OpenLDAP 2.3.
+// Sistema de gestion de ficheros en el portal.
 //
-// Propiedad de Mankind Capital, S.L -- Todos los derechos reservados
-// Nynpha Multimedia y sus respectivos logos son marcas registradas de Mankind Capital SL
-//
+
+function get_directory () {
+	$current_path = "";
+	
+	if (! empty($_SERVER["DOCUMENT_ROOT"])) {
+		$current_path = $_SERVER["DOCUMENT_ROOT"];
+	} else if (! empty($GLOBALS["_SERVER"]["DOCUMENT_ROOT"])) {
+		$current_path = $GLOBALS["_SERVER"]["DOCUMENT_ROOT"];
+	} 
+	else {
+		$current_path = getcwd();
+	}
+	return $current_path;
+}
 
 class file_object {
 
@@ -16,14 +26,7 @@ class file_object {
 	var $file_name;
 
 	function file_object($server_data){
-		if (!isset($_SERVER["DOCUMENT_ROOT"])) {
-			$current_path = $_SERVER["DOCUMENT_ROOT"];
-		} else if (!isset($GLOBALS["_SERVER"]["DOCUMENT_ROOT"])) {
-			$current_path = getcwd();
-		} 
-		else {
-			$current_path = $GLOBALS["_SERVER"]["DOCUMENT_ROOT"];
-		}
+		$current_path = get_directory();
 
 		if (file_exists($current_path.$server_data)) {
 			$this->file_name = $current_path.$server_data;

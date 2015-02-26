@@ -1,8 +1,8 @@
 <?php 
 require_once "data_object/i.object.inc";
 
-class h_authdb extends Object {
-	var $classname = "h_authdb";
+class z_authdb extends Object {
+	var $classname = "z_authdb";
 
 	protected	$usuid;	/** @var int ID usuario */
 	protected	$usulgn;	/** @var varchar Nombre del usuario */
@@ -48,66 +48,87 @@ class h_authdb extends Object {
 	}
 
 	function auth_user( $data_in, &$data_out ) {
-		// TODO: Funcion auth_user
+
+		// AUTO: Funcion auth_user
 		$this->flush_data();
 		$this->begin_transaction();
 		/** Verify INPUT usulgn,usupwd  */
-		$fieldsRequiredFunc = Array ('usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario');
-		if ($this->create_html_input($fieldsRequiredFunc, $data_in)) {
-			$this->end_transaction();
+		$SQL["field"] = Array ('usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario');
+		if ($this->create_html_input($SQL["field"], $data_in)) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$fieldsSQL = Array ('usulgn');
-		if (! $this->sql_scan ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
+
+		$SQL["field"] = Array ('usulgn');
+		$SQL["table"] = Array ('zUser');
+		if (! $this->sql_scan ($SQL, $data_in) ) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$this->login( $data_in, $data_out );
-		$fieldsSQL = Array ('usulgn','usupwd');
+		if (! $this->login( $data_in, $data_out )) {
+			$this->failed_transaction();
+			return FALSE;
+		}
+
+		$SQL["field"] = Array ('usulgn','usupwd');
 		$this->end_transaction();
 		return TRUE;
 	}
 
 	function lost_pwd_user( $data_in, &$data_out ) {
-		// TODO: Funcion lost_pwd_user
+
+		// AUTO: Funcion lost_pwd_user
 		$this->flush_data();
 		$this->begin_transaction();
 		/** Verify INPUT usulgn,usuema  */
-		$fieldsRequiredFunc = Array ('usulgn' => 'Nombre del usuario','usuema' => 'E-Mail del usuario registrado');
-		if ($this->create_html_input($fieldsRequiredFunc, $data_in)) {
-			$this->end_transaction();
+		$SQL["field"] = Array ('usulgn' => 'Nombre del usuario','usuema' => 'E-Mail del usuario registrado');
+		if ($this->create_html_input($SQL["field"], $data_in)) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$fieldsSQL = Array ('usuema');
-		if (! $this->sql_scan ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
+
+		$SQL["field"] = Array ('usuema');
+		$SQL["table"] = Array ('zUser');
+		if (! $this->sql_scan ($SQL, $data_in) ) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$this->lostpwd( $data_in, $data_out );
-		$fieldsSQL = Array ('usulgn','usuema');
+		if (! $this->lostpwd( $data_in, $data_out )) {
+			$this->failed_transaction();
+			return FALSE;
+		}
+
+		$SQL["field"] = Array ('usulgn','usuema');
 		$this->end_transaction();
 		return TRUE;
 	}
 
 	function new_user( $data_in, &$data_out ) {
-		// TODO: Funcion new_user
+
+		// AUTO: Funcion new_user
 		$this->flush_data();
 		$this->begin_transaction();
 		/** Verify INPUT usulgn,usupwd,usuema  */
-		$fieldsRequiredFunc = Array ('usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario','usuema' => 'E-Mail del usuario registrado');
-		if ($this->create_html_input($fieldsRequiredFunc, $data_in)) {
-			$this->end_transaction();
+		$SQL["field"] = Array ('usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario','usuema' => 'E-Mail del usuario registrado');
+		if ($this->create_html_input($SQL["field"], $data_in)) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$fieldsSQL = Array ('usulgn');
-		if (! $this->sql_scan ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
+
+		$SQL["field"] = Array ('usulgn');
+		$SQL["table"] = Array ('zUser');
+		if (! $this->sql_scan ($SQL, $data_in) ) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$this->create_object( $data_in, $data_out );
-		$fieldsSQL = Array ('usulgn','usupwd','usuema');
-		if (! $this->sql_create ($fieldsSQL, "zUser", $data_out)) {
-			$this->end_transaction();
+		if (! $this->create_object( $data_in, $data_out )) {
+			$this->failed_transaction();
+			return FALSE;
+		}
+
+		$SQL["field"] = Array ('usulgn','usupwd','usuema');
+		if (! $this->sql_create ($SQL, $data_out)) {
+			$this->failed_transaction();
 			return FALSE;
 		}
 		$this->end_transaction();
@@ -115,15 +136,21 @@ class h_authdb extends Object {
 	}
 
 	function logout( $data_in, &$data_out ) {
-		// TODO: Funcion logout
+
+		// AUTO: Funcion logout
 		$this->flush_data();
 		$this->begin_transaction();
-		$fieldsSQL = Array ('usulgn');
-		if (! $this->sql_read ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
+
+		$SQL["field"] = Array ('usulgn');
+		$SQL["table"] = Array ('zUser');
+		if (! $this->sql_read ($SQL, $data_in) ) {
+			$this->failed_transaction();
 			return FALSE;
 		}
-		$this->logout( $data_in, $data_out );
+		if (! $this->logout( $data_in, $data_out )) {
+			$this->failed_transaction();
+			return FALSE;
+		}
 		$this->end_transaction();
 		return TRUE;
 	}
