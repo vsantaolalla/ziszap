@@ -1,132 +1,191 @@
-<?php 
-require_once "data_object/i.object.inc";
+<?php
+require_once "zz-object/authdb/class.php";
 
-class authdb extends Object {
-	var $classname = "authdb";
+class authdb extends z_authdb {
+        var $classname = "authdb";
 
-	protected	$usuid;	/** @var int ID usuario */
-	protected	$usulgn;	/** @var varchar Nombre del usuario */
-	protected	$usupwd;	/** @var varchar Password del usuario */
-	protected	$usuema;	/** @var varchar E-Mail del usuario registrado */
+        /**
+         *
+         * Funcion: login ... Conectar el usuario al sistema
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar usupwd  Password del usuario
+         *
+        */
+        function login ( $data_in, &$data_out ) {
 
-	protected	$tables = Array ('zUser' => 'usuid,usulgn,usupwd,usuema');
-	protected	$pKey_tables = Array ('zUser' => 'usuid');
-	protected	$pExt_tables = Array ();
-	protected	$fieldsRequired = Array ('usuid','usulgn','usupwd','usuema');
-	protected	$fieldsSize = Array ('usulgn' => 30,'usupwd' => 50,'usuema' => 40);
-	protected	$fieldsValidate = Array ('usuid' => 'int','usulgn' => 'varchar','usupwd' => 'varchar','usuema' => 'varchar');
-	protected	$fieldsText = Array ('usuid' => 'ID usuario','usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario','usuema' => 'E-Mail del usuario registrado');
-	protected	$ext_form;
+                // TODO: Funcion login
+                return TRUE;
+        }
 
-	function authdb () {
-		$this->ext_form = new ValidateForm();
-		$this->ext_form->tables = $this->tables;
-		$this->ext_form->fieldsRequired = $this->fieldsRequired;
-		$this->ext_form->fieldsSize = $this->fieldsSize;
-		$this->ext_form->fieldsValidate = $this->fieldsValidate;
-	}
+        /**
+         *
+         * Funcion: lostpwd ... Recuperar password del usuario
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar usuema  E-Mail del usuario registrado
+         *
+        */
+        function lostpwd ( $data_in, &$data_out ) {
 
-	protected function flush_data () { 
-		if (isset($this->usuid)) unset($this->usuid);
-		if (isset($this->usulgn)) unset($this->usulgn);
-		if (isset($this->usupwd)) unset($this->usupwd);
-		if (isset($this->usuema)) unset($this->usuema);
-	}
+                // TODO: Funcion lostpwd
+                return TRUE;
+        }
 
-	function get_data ( &$data_out ) { 
-		if (isset($this->usuid)) $data_out["usuid"] = $this->usuid;
-		if (isset($this->usulgn)) $data_out["usulgn"] = $this->usulgn;
-		if (isset($this->usupwd)) $data_out["usupwd"] = $this->usupwd;
-		if (isset($this->usuema)) $data_out["usuema"] = $this->usuema;
-	}
+        /**
+         *
+         * Funcion: create_user ... Crear usuario
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar usupwd  Password del usuario
+         * @input       varchar usuema  E-Mail del usuario registrado
+         * @output      varchar usulgn  Nombre del usuario
+         * @output      varchar usupwd  Password del usuario
+         * @output      varchar usuema  E-Mail del usuario registrado
+         *
+        */
+        function create_user ( $data_in, &$data_out ) {
 
-	function set_data ( $data_in ) { 
-		if (isset($data_in["usuid"])) $this->usuid = $data_in["usuid"];
-		if (isset($data_in["usulgn"])) $this->usulgn = $data_in["usulgn"];
-		if (isset($data_in["usupwd"])) $this->usupwd = $data_in["usupwd"];
-		if (isset($data_in["usuema"])) $this->usuema = $data_in["usuema"];
-	}
+                // TODO: Funcion create_user
+                $data_out = $data_in;
+                $data_out["usupwd"] = md5($data_in["usupwd"]);
+                return TRUE;
+        }
 
-	function auth_user( $data_in, &$data_out ) {
-		// TODO: Funcion auth_user
-		$this->flush_data();
-		$this->begin_transaction();
-		/** Verify INPUT usulgn,usupwd  */
-		$fieldsRequiredFunc = Array ('usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario');
-		if ($this->create_html_input($fieldsRequiredFunc, $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$fieldsSQL = Array ('usulgn');
-		if (! $this->sql_scan ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$this->login( $data_in, $data_out );
-		$fieldsSQL = Array ('usulgn','usupwd');
-		$this->end_transaction();
-		return TRUE;
-	}
+        /**
+         *
+         * Funcion: not_find_user_to_group ... Eliminar usuario
+         * @input       varchar usulgn  Nombre del usuario
+         *
+        */
+        function not_find_user_to_group ( $data_in, &$data_out ) {
 
-	function lost_pwd_user( $data_in, &$data_out ) {
-		// TODO: Funcion lost_pwd_user
-		$this->flush_data();
-		$this->begin_transaction();
-		/** Verify INPUT usulgn,usuema  */
-		$fieldsRequiredFunc = Array ('usulgn' => 'Nombre del usuario','usuema' => 'E-Mail del usuario registrado');
-		if ($this->create_html_input($fieldsRequiredFunc, $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$fieldsSQL = Array ('usuema');
-		if (! $this->sql_scan ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$this->lostpwd( $data_in, $data_out );
-		$fieldsSQL = Array ('usulgn','usuema');
-		$this->end_transaction();
-		return TRUE;
-	}
+                // TODO: Funcion not_find_user_to_group
+                return TRUE;
+        }
 
-	function new_user( $data_in, &$data_out ) {
-		// TODO: Funcion new_user
-		$this->flush_data();
-		$this->begin_transaction();
-		/** Verify INPUT usulgn,usupwd,usuema  */
-		$fieldsRequiredFunc = Array ('usulgn' => 'Nombre del usuario','usupwd' => 'Password del usuario','usuema' => 'E-Mail del usuario registrado');
-		if ($this->create_html_input($fieldsRequiredFunc, $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$fieldsSQL = Array ('usulgn');
-		if (! $this->sql_scan ($fieldsSQL, "zUser", $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$this->create_object( $data_in, $data_out );
-		$fieldsSQL = Array ('usulgn','usupwd','usuema');
-		if (! $this->sql_create ($fieldsSQL, "zUser", $data_out)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$this->end_transaction();
-		return TRUE;
-	}
+        /**
+        *
+         * Funcion: add_member_to_list ... Añadir usuario al grupo
+         * @input       int             grpid   ID del grupo
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar grpnam  Nombre del grupo
+         * @input       text    grpmem  Miembros del grupo
+         * @output      int             grpid   ID del grupo
+         * @output      varchar grpnam  Nombre del grupo
+         * @output      text    grpmem  Miembros del grupo
+         *
+        */
+        function add_member_to_list ( $data_in, &$data_out ) {
+        
+                $key_users = Array();
+                $data_temp = Array();
+                $data_temp = $this->first_item();
+                // Si no tiene miembros el grpmem es null, asignamos a un array vacio.
+                if ((! isset($data_temp["grpmem"])) || ($data_temp["grpmem"] == ""))  {
+                        $data_temp["grpmem"] = "";
+                } else {
+                        $list_users = explode(",", $data_temp["grpmem"]);
+                        foreach ($list_users as $key => $value) {
+                                $key_users[$value] = 1;
+                        }
+                }
+                $key_users[$data_in["usulgn"]] = 1;
+        
+                $data_out = $data_temp;
+                $data_out["grpmem"] = implode(",", array_keys($key_users));
+        
+                return TRUE;
+        }
+        
+        /**
+         *
+         * Funcion: del_member_to_list ... Eliminar usuario al grupo
+         * @input       int             grpid   ID del grupo
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar grpnam  Nombre del grupo
+         * @input       text    grpmem  Miembros del grupo
+         * @output      int             grpid   ID del grupo
+         * @output      varchar grpnam  Nombre del grupo
+         * @output      text    grpmem  Miembros del grupo
+         *
+        */
+        function del_member_to_list ( $data_in, &$data_out ) {
+        
+                $key_users = Array();
+                $data_temp = Array();
+                $data_temp = $this->first_item();
+                // Si no tiene miembros el grpmem es null, asignamos a un array vacio.
+                if ((! isset($data_temp["grpmem"])) || ($data_temp["grpmem"] == ""))  {
+                        return FALSE;
+                } else {
+                        $list_users = explode(",", $data_temp["grpmem"]);
+                        foreach ($list_users as $key => $value) {
+                                $key_users[$value] = 1;
+                        }
+                }
+                if (! isset($key_users[$data_in["usulgn"]])) {
+                        return FALSE;
+                }
+                unset($key_users[$data_in["usulgn"]]);
 
-	function logout( $data_in, &$data_out ) {
-		// TODO: Funcion logout
-		$this->flush_data();
-		$this->begin_transaction();
-		$fieldsSQL = Array ('cacid','cacnam','cacarg','mlsid','usulgn');
-		if (! $this->sql_read ($fieldsSQL, "wk_circular_list", $data_in)) {
-			$this->end_transaction();
-			return FALSE;
-		}
-		$this->logout( $data_in, $data_out );
-		$this->end_transaction();
-		return TRUE;
-	}
+                $data_out = $data_temp;
+                $data_out["grpmem"] = implode(",", array_keys($key_users));
+
+                return TRUE;
+        }
+
+        /**
+         *
+         * Funcion: is_member_to_list ... Verificar si el usuario pertenece al grupo
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar grpnam  Nombre del grupo
+         * @input       text    grpmem  Miembros del grupo
+         *
+        */
+        function is_member_to_list ( $data_in, &$data_out ) {
+
+                // TODO: Funcion is_member_to_list
+                $key_users = Array();
+                $data_temp = Array();
+                $data_temp = $this->first_item();
+                // Si no tiene miembros el grpmem es null, asignamos a un array vacio.
+                if ((! isset($data_temp["grpmem"])) || ($data_temp["grpmem"] == ""))  {
+                        return FALSE;
+                } else {
+                        $list_users = explode(",", $data_temp["grpmem"]);
+                        foreach ($list_users as $key => $value) {
+                                $key_users[$value] = 1;
+                        }
+                }
+                if (! isset($key_users[$data_in["usulgn"]])) {
+                        return FALSE;
+                } else {
+                        return TRUE;
+                }
+        }
+
+        /**
+         *
+         * Funcion: find_member_to_list ... Encontrar un usuario al grupo
+         * @input       varchar usulgn  Nombre del usuario
+         * @input       varchar grpnam  Nombre del grupo
+         * @input       text    grpmem  Miembros del grupo
+         *
+        */
+        function find_member_to_list ( $data_in, &$data_out ) {
+
+                // TODO: Funcion find_member_to_list
+                return TRUE;
+        }
+
+        /**
+         *
+         * Funcion: logout ... Desconetar el usuario
+         *
+        */
+        function logout ( $data_in, &$data_out ) {
+
+                // TODO: Funcion logout
+                return TRUE;
+        }
 
 }
 ?>
