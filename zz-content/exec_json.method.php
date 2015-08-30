@@ -10,7 +10,7 @@
 	}
 	
 	if (!isset($cmd_in["object"])) {
-		header('HTTP/1.1 405 Method Not Allowed');
+		header('HTTP/1.1 405 Method Not Allowed.');
 		echo "error";
 		die();
 	}
@@ -20,7 +20,7 @@
 	unset($cmd_in["object"]);
 
 	if (!isset($cmd_in["method"])) {
-		header('HTTP/1.1 405 Method Not Allowed');
+		header('HTTP/1.1 405 Method Not Allowed.');
 		echo "error";
 		die();
 	}
@@ -30,7 +30,7 @@
 	eval ("\$result = \$T->".$method_call."(\$cmd_in, \$cmd_out);");
 	if ($result) {
 		if (! $cmd_out)
-			header('HTTP/1.1 204 No Content');
+			header('HTTP/1.1 204 No Content.');
 		foreach (reset($cmd_out) as $key => $value) {
 			// Si el campo es enum, para todos los valores del campo generamos el key.text 
 			if ($T->get_fieldType($key) == "enum") {
