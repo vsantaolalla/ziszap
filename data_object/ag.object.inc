@@ -13,11 +13,13 @@ class generical_object {
 
 	private $fields;
 	private $fields_external;
+	private $fields_enum_external;
 	private $fields_enum;
 	private $tables;
 	private $methods;
 	private $transactions;
 	private $interfaces;
+	private $controllers;
 
 	var $form_object;
 	var $fields_error;
@@ -44,7 +46,13 @@ class generical_object {
 			if (isset($parser->arrOutput[0]["FIELDS_EXTERNAL"][0]["FIELD_EXTERNAL"])) {
 				foreach ($parser->arrOutput[0]["FIELDS_EXTERNAL"][0]["FIELD_EXTERNAL"] as $key => $value) {
 //					print_r($value);
-					$this->fields_external[$value["attr"][0]["NAME"]] = $value["attr"][0];				
+					$this->fields_external[$value["attr"][0]["NAME"]] = $value["attr"][0];
+					// Si es un enum guardem els valors del enum dins la variable $this->fields_enum.
+					if (isset($value["FIELD_VALUE"])) {
+						foreach ($value["FIELD_VALUE"] as $keyi => $valuei) {
+							$this->fields_enum_external[$value["attr"][0]["NAME"]][] = $valuei["attr"][0];
+						}
+					}
 				}
 			}
 			if (isset($parser->arrOutput[0]["TABLES"][0]["TABLE"])) {
@@ -96,6 +104,12 @@ class generical_object {
 					$this->interfaces[$value["attr"][0]["NAME"]] = $value["attr"][0];
 				}
 			}
+
+			if (isset($parser->arrOutput[0]["CONTROLLERS"][0]["CONTROLLER"])) {
+				foreach ($parser->arrOutput[0]["CONTROLLERS"][0]["CONTROLLER"] as $key => $value) {
+					$this->controllers[$value["attr"][0]["NAME"]] = $value["attr"][0];
+				}
+			}
 		}
 	}
 
@@ -111,10 +125,17 @@ class generical_object {
 	}
 	
 	function list_enum_fields() {
+		$external_enum_field = Array();
+		if (isset($this->fields_enum_external)) {
+			foreach ($this->fields_enum_external as $key => $value) {
+				$external_enum_field[$key] = $value[$key];
+			}
+		}
+
 		if (isset($this->fields_enum)) {
-			return $this->fields_enum;
+			return array_merge($this->fields_enum, $external_enum_field);
 		} else {	
-			return Array();
+			return $external_enum_field;
 		}
 	}
 	
@@ -133,8 +154,16 @@ class generical_object {
 		$result = $parser->parse_xml_file();
 		if (isset($parser->arrOutput[0]["FIELDS"][0]["FIELD"])) {
 			foreach ($parser->arrOutput[0]["FIELDS"][0]["FIELD"] as $key => $value) {
-				if ($value["attr"][0]["NAME"] == $field)	
+				if ($value["attr"][0]["NAME"] == $field) {	
 					$external_field = $value["attr"][0];				
+					// Si es un enum guardem els valors del enum dins la variable $this->fields_enum.
+					if (isset($value["FIELD_VALUE"])) {
+						foreach ($value["FIELD_VALUE"] as $keyi => $valuei) {
+							$external_field[$field][] = $valuei["attr"][0];
+						}
+						$this->fields_enum_external[$field] = $external_field;
+					}
+				}
 			}
 		}
 		if (! isset($external_field["NAME"])) {
@@ -261,6 +290,22 @@ class generical_object {
 	function get_interface ($interface) {
 		foreach ($this->interfaces as $key => $value) {
 			if ($value["NAME"] == $interface)
+				return $value;
+		}
+		return NULL;
+	}
+
+	function list_controllers() {
+		if (isset($this->controllers)) {
+			return $this->controllers;
+		} else {
+			return Array();
+		}	
+	}
+	
+	function get_controller ($controller) {
+		foreach ($this->controllers as $key => $value) {
+			if ($value["NAME"] == $controler)
 				return $value;
 		}
 		return NULL;

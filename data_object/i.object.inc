@@ -7,7 +7,7 @@
 // de cada base de datos de data_object
 //
 
-require_once("zz-admin/config.php");
+require ("zz-admin/config.php");
 
 
 abstract class Object {
@@ -490,6 +490,7 @@ abstract class Object {
 	}
 
 	function sql_create ($SQL, $data_out) {
+		global $db_connhandle;
 		global $func_debug;
 		$fieldsINSERT = "";
 		$fieldsVALUES = "";
@@ -522,9 +523,18 @@ abstract class Object {
 
 		$table = implode(",", $SQL["table"]);
 		$sql = "INSERT INTO ".$table." ( ".$fieldsINSERT." ) VALUES (".$fieldsVALUES.")";
-		if ($func_debug) echo $sql."\n";
-		$qhandle = @mysql_query($sql.";") or $this->object_error("sql_create ".$table." failed");
+		if ($func_debug){
+			echo $sql."\n";
+			$qhandle = mysql_query($sql.";") or $this->object_error("sql_create ".$table." failed");
+		} 
+		else {
+			$qhandle = @mysql_query($sql.";") or $this->object_error("sql_create ".$table." failed");
+		}
+		
 		$this->last_insert_id = @mysql_insert_id();
+		if (! $qhandle) {
+			return FALSE;
+		}
 		return TRUE;
 	}
 	
@@ -781,10 +791,11 @@ abstract class Object {
 
 	function view_value_fields($keys, $data_in, $separator="") {
 		$arr_keys = explode(",",$keys);
-		if (count($arr_keys) > 0) echo "<p>\n";
+		$returned_value = "";
+//		if (count($arr_keys) > 0) echo "<p>\n";
 		foreach ($arr_keys as $k => $key) {
 			if (($this->fieldsValidate[$key] == "varchar") || ($this->fieldsValidate[$key] == "int") || ($this->fieldsValidate[$key] == "float") || ($this->fieldsValidate[$key] == "date")) {
-				echo $data_in[$key];
+				$returned_value .= $data_in[$key];
 			} else if ($this->fieldsValidate[$key] == "enum") {
 				$enum_values = Array();
 				$cmd = "\$enum_values = \$this->enum_".$key.";\n";
@@ -792,17 +803,18 @@ abstract class Object {
 				if (is_array($data_in)) {
 					foreach ($enum_values as $keyi => $valuei) {
 						if ($data_in[$key] == $keyi) 
-							echo $valuei;
+							$returned_value .= $valuei;
 					}
 				} else {
 					if (isset($enum_values[$data_in])) {
-						echo $enum_values[$data_in];
+						$returned_value .= $enum_values[$data_in];
 					} 
 				}
 			}
-			echo $separator;
+			$returned_value .= $separator;
 		}
-		if (count($arr_keys) > 0) echo "</p>\n";
+		return $returned_value;
+//		if (count($arr_keys) > 0) echo "</p>\n";
 	}
 	
 	function object_error($strFILEError)
@@ -812,14 +824,15 @@ abstract class Object {
 		echo "<table border='0' cellpadding='1' cellspacing='1' width='100%'><tr><td bgcolor='#514537'>";
 		echo "<table border='0' cellpadding='5' cellspacing='0' width='100%'>";
 		echo "<tr bgcolor='#EEEEEE'>";
-		echo "<td width='20' valign='top'><img src='rcrs/gif/error.gif' hspace='3'></td>";
+		echo "<td width='20' valign='top'><img src='zz-content/images/error_db.gif' hspace='3'></td>";
 		echo "<td valign='middle'>";
 		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/i.object.inc&gt;</i> <b>$strFILEError</b></font><br><br>";
 		echo "<font face='Verdana,Arial' size=2><u>Function callback</u>:</font><br>";
 		for ($i=0; $i<count($func_backtrace); $i++){
 			echo "<font face='Verdana,Arial' size=2><i>&lt;$i&gt;</i> <b>".$func_backtrace[$i]["file"]."=>".$func_backtrace[$i]["function"]."(".$func_backtrace[$i]["line"].")</b>";
 			echo " <font color='#666666'> params: ";
-			var_dump($func_backtrace[$i]["args"]);
+			if (isset($func_backtrace[$i]["args"])) var_dump($func_backtrace[$i]["args"]);
+			else echo " No params. "; 
 			echo "</font></font><br>";
 		}
 		echo "</td>";

@@ -450,10 +450,12 @@ class object_module extends generical_object {
 		}
 				
 		foreach ($clase->list_interfaces() as $key => $value) {
-			var_dump($value);
 			$this->create_interface ($object, $value);
 		}
 
+		foreach ($clase->list_controllers() as $key => $value) {
+			$this->create_controller ($object, $value);
+		}
 		$data .= "}\n?>\n";
 		echo $data;
 		file_put_contents($path, $data);
@@ -809,9 +811,44 @@ class object_module extends generical_object {
 		$data .= "\t\$result = \$T->".$value["METHOD"]."(\$cmd_in, \$cmd_out);\n";
 		$data .= "\tif (\$result) {\n\t\tif (! \$cmd_out)\n\t\t\theader('HTTP/1.1 204 No Content');\n\t\techo json_encode(\$cmd_out);\n";
 		$data .= "\t} else {\n\t\theader('HTTP/1.1 405 Method Not Allowed');\n\t\techo \"error\";\n\t}\n";
-		$path = $GLOBALS["_SERVER"]["DOCUMENT_ROOT"]."/zz-interface/".$object."_".$value["NAME"].".php";
+		$path = get_directory()."/zz-interface/".$object."_".$value["NAME"].".php";
 		$data .= "?>\n";
-		file_put_contents($path, $data);
+		if (! file_exists($path)) {
+			echo $data;
+			file_put_contents($path, $data);
+		}
+	}
+	
+	protected function create_controller ($object, $value)
+	{
+		global $GLOBALS;
+		global $app_name;
+		$path = get_directory()."/js/controllers/ctrl_".$value["NAME"].".js";
+		if (! file_exists($path)) {
+			$data = "";
+	//		$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$routeParams, \$http) {\n";
+			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$http) {\n";
+			$data .= "\t\$scope.loading = true;\n";
+			$data .= "\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
+			if (isset($value["FIELD"])) {
+				$list_fields = explode(",", $value["FIELD"]);
+				foreach ($list_fields as $key => $field) {
+					$data .= "\t\t".trim($field).": ".trim($field).",\n";
+				}
+			}
+			$data .= "\t\tobject: '".$value["OBJECT"]."',\n";
+			$data .= "\t\tmethod: '".$value["METHOD"]."'\n";
+			$data .= "\t}}).success(function (data, status, headers, config) {\n";
+			$data .= "\t\t\$scope.".$value["COLLECTOR"]." = data;\n";
+			$data .= "\t}).error(function (data, status, headers, config) {\n";
+			$data .= "\t\tconsole.error (data, status, headers, config);\n";
+			$data .= "\t}).finally(function () {\n";
+			$data .= "\t\t\$scope.loading = false;\n";
+			$data .= "\t});\n";
+			$data .= "});\n";
+			echo $data;
+			file_put_contents($path, $data);
+		}
 	}
 }
 ?>

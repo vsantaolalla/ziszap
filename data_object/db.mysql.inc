@@ -1,6 +1,7 @@
 <?
 
-require_once("o.database.inc");
+require_once("data_object/o.database.inc");
+require_once("zz-admin/config.php");
 
 class database_object extends generical_object_database {
 
@@ -331,9 +332,10 @@ class database_object extends generical_object_database {
 	}
 
 }
+
 if (!isset($db_connhandle))
-	$db_connhandle = mysql_connect($db_host, $db_user, $db_passwd) or database_object::db_mysql_die("connect_server_database");;
+	$db_connhandle = @mysql_connect($db_host, $db_user, $db_passwd) or database_object::db_mysql_die("connect_server_database");;
 if (!isset($db_syshandle))
-	$db_syshandle = mysql_select_db($database_name) or database_object::db_mysql_die("select_database");
+	$db_syshandle = @mysql_select_db($database_name) or database_object::db_mysql_die("select_database");
 
 ?>

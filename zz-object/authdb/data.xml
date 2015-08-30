@@ -38,7 +38,7 @@
             <store_input object="authdb" table="zGroup" action="noscan" field="grpnam" />
             <store_output object="authdb" table="zGroup" action="create" field="grpnam" />
     </method>
-    <method name="add_user_to_group" object="authdb" function="add_member_to_list" text="Añadir usuario al grupo">
+    <method name="add_user_to_group" object="authdb" function="add_member_to_list" text="AÃ±adir usuario al grupo">
             <input object="authdb" field="usulgn,grpnam" />
             <store_input object="authdb" table="zUser" action="scan" field="usulgn" />
             <store_input object="authdb" table="zGroup" action="scan" field="grpnam" />
