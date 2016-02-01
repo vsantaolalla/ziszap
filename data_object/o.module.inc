@@ -858,12 +858,30 @@ class object_module extends generical_object {
 				if (isset($value_value["NODE_NAME"])) {
 					if ($value_value["NODE_NAME"] == "FUNCTION") {
 						$list_f_input = $clase->list_input_method($value_value["METHOD"]);
-						$dataf .= "\t\$scope.".$value_value["NAME"]." = function () {\n";
+						if (isset($value_value["FIELD"])) {
+							$parameters_function = Array();
+							$dataf .= "\t\$scope.".$value_value["NAME"]." = function (";
+							$parameters_function = explode(",", $value_value["FIELD"]);
+							for ($index_pf = 0; $index_pf < count($parameters_function) - 1; $index_pf++) {
+								$dataf .= trim($parameters_function[$index_pf]).", ";
+							}
+							$dataf .= trim($parameters_function[$index_pf]);
+							$dataf .= ") {\n";
+						} else {
+							$dataf .= "\t\$scope.".$value_value["NAME"]." = function () {\n";
+						}
 						$dataf .= "\t\t\$scope.loading = true;\n";
 						$dataf .= "\t\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
 						$dataf .= "\t\t\tobject: '".$value["OBJECT"]."',\n";
-						foreach ($list_f_input as $key_input => $value_input) {
-							$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value["ITEM"].".".$value_input["NAME"].",\n";
+						if (isset($value_value["FIELD"])) {
+							$parameters_function = explode(",", $value_value["FIELD"]);
+							foreach ($parameters_function as $key_input => $value_input) {
+								$dataf .= "\t\t\t".$value_input.": ".$value_input.",\n";
+							}
+						} else {
+							foreach ($list_f_input as $key_input => $value_input) {
+								$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value["ITEM"].".".$value_input["NAME"].",\n";
+							}
 						}
 						$dataf .= "\t\t\tmethod: '".$value_value["METHOD"]."'\n";
 						$dataf .= "\t\t}}).success(function (data, status, headers, config) {\n";
@@ -873,7 +891,7 @@ class object_module extends generical_object {
 							}
 							$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
 						}
-						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]." = data;\n";
+						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["ITEM"]." = data;\n";
 						$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
 						$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
 						$dataf .= "\t\t}).finally(function () {\n";
@@ -891,7 +909,6 @@ class object_module extends generical_object {
 			// Habilitar el cambio del texto de los enums cada vez que cambie uno de ellos.
 			$datae = "";
 			foreach ($list_f_enum as $key_enum => $value_enum) {
-				var_dump($value_enum);
 				$datae .= "\t\$scope.text_enum_".$key_enum." = {\n";
 				for ($keyve = 0; $keyve < count($value_enum) - 1; $keyve++) {
 					$valueve = $value_enum[$keyve];
@@ -902,7 +919,6 @@ class object_module extends generical_object {
 				$datae .="\t};\n\n";
 			}
 			if (isset($datae)) $data .= $datae;
-			var_dump($list_f_enum);
 			$data .= "});\n";
 			echo $data;
 			file_put_contents($path, $data);

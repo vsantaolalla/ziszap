@@ -94,6 +94,10 @@ abstract class Object {
 		$o_form = $i_form;
 		return TRUE;
 	}
+	function update_value_object ($i_form, &$o_form) {
+		$o_form = $i_form;
+		return TRUE;
+	}
 	function update_object ($i_form, &$o_form) {
 		$entrada = Array();
 		$entrada = $this->next_item();
