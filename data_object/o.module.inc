@@ -851,6 +851,7 @@ class object_module extends generical_object {
 			// Lista todas las funciones y variables en el controller. 
 			$dataf = "";
 			$datav = "";
+			$list_f_enum = $clase->list_enum_fields();
 			for ($index = 0; isset($value[$index]); $index++) {
 				$value_value = Array();
 				$value_value = $value[$index];
@@ -866,7 +867,12 @@ class object_module extends generical_object {
 						}
 						$dataf .= "\t\t\tmethod: '".$value_value["METHOD"]."'\n";
 						$dataf .= "\t\t}}).success(function (data, status, headers, config) {\n";
-						if ($value_value["ACTION"] == "create") $dataf .= "\t\t\t\$scope.".$value["COLLECTOR"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
+						if ($value_value["ACTION"] == "create") {
+							foreach ($list_f_enum as $enum_field => $value_enum_field) {
+								$dataf .= "\t\t\t\$scope.".$value["ITEM"].".".$enum_field."_text = \$scope.text_enum_".$enum_field."[\$scope.".$value["ITEM"].".".$enum_field."].text;\n";
+							}
+							$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
+						}
 						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]." = data;\n";
 						$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
 						$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
@@ -884,7 +890,6 @@ class object_module extends generical_object {
 			if (isset($dataf)) $data .= $dataf;
 			// Habilitar el cambio del texto de los enums cada vez que cambie uno de ellos.
 			$datae = "";
-			$list_f_enum = $clase->list_enum_fields();
 			foreach ($list_f_enum as $key_enum => $value_enum) {
 				var_dump($value_enum);
 				$datae .= "\t\$scope.text_enum_".$key_enum." = {\n";
