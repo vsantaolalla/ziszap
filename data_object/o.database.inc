@@ -1,4 +1,4 @@
-<?PHP
+<?php
 
 //
 // Ziszap Portal System Objects.

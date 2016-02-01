@@ -1,4 +1,4 @@
-<?
+<?php
 require_once "data_object/o.form.inc";
 
 class ValidateForm extends object_form {
@@ -18,14 +18,8 @@ class ValidateForm extends object_form {
 	function create_form ($method) {
 		$form_data = array ();	
 		$list_fields = $this->list_fields();
-		$input_fields = $this->list_input_methods($method);
-		foreach ($input_fields as $key => $value) {
-			$form_data_temp = explode(",", $value["FIELD"]);
-			foreach ($form_data_temp as $key_temp => $value_temp) {
-				$form_data[$value_temp] = $list_fields[$value_temp];
-			}
-		}
-		return $form_data;
+		$input_fields = $this->list_input_method($method);
+		return $input_fields;
 	}
 	
 	function create_html_input ($listFields, $data_in = Array()) {

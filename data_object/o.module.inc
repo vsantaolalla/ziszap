@@ -1,4 +1,4 @@
-<?PHP
+<?php
 
 //
 // Ziszap Portal System Objects.
@@ -424,7 +424,7 @@ class object_module extends generical_object {
 			$data .= "\t\treturn TRUE;\n";
 			$data .= "\t}\n\n";
 		}
-		
+
 		foreach ($clase->list_transactions() as $key => $value) {
 			if (isset($value["TEXT"])) {
 				$data .= "\t// Transaction: ".$value["NAME"]." ... ".$value["TEXT"]."\n";
@@ -805,7 +805,7 @@ class object_module extends generical_object {
 	protected function create_interface ($object, $value)
 	{
 		global $GLOBALS;
-		$data = "<?\n\trequire_once('zz-admin/config.php');\n\n\t\$cmd_in = Array();\n\t\$cmd_out = Array();\n\n";
+		$data = "<?php\n\trequire_once('zz-admin/config.php');\n\n\t\$cmd_in = Array();\n\t\$cmd_out = Array();\n\n";
 		$data .= "\tif (isset(\$_POST) && count(\$_POST) > 0) {\n\t\t\$cmd_in = \$_POST;\n\t} else if (isset(\$_GET) && count(\$_GET) > 0) {\n\t\t\$cmd_in = \$_GET;\n\t}\n\n";
 		$data .= "\tinclude \"zz-object/".$object."/init.php\";\n\t\$T = new ".$object."();\n";
 		$data .= "\t\$result = \$T->".$value["METHOD"]."(\$cmd_in, \$cmd_out);\n";
@@ -823,10 +823,13 @@ class object_module extends generical_object {
 	{
 		global $GLOBALS;
 		global $app_name;
+		global $clase;		
+		
 		$path = get_directory()."/js/controllers/ctrl_".$value["NAME"].".js";
-		if (! file_exists($path)) {
+
+		if ( file_exists($path)) {
 			$data = "";
-	//		$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$routeParams, \$http) {\n";
+//			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$routeParams, \$http) {\n";
 			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$http) {\n";
 			$data .= "\t\$scope.loading = true;\n";
 			$data .= "\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
@@ -844,7 +847,57 @@ class object_module extends generical_object {
 			$data .= "\t\tconsole.error (data, status, headers, config);\n";
 			$data .= "\t}).finally(function () {\n";
 			$data .= "\t\t\$scope.loading = false;\n";
-			$data .= "\t});\n";
+			$data .= "\t});\n\n";
+			// Lista todas las funciones y variables en el controller. 
+			$dataf = "";
+			$datav = "";
+			for ($index = 0; isset($value[$index]); $index++) {
+				$value_value = Array();
+				$value_value = $value[$index];
+				if (isset($value_value["NODE_NAME"])) {
+					if ($value_value["NODE_NAME"] == "FUNCTION") {
+						$list_f_input = $clase->list_input_method($value_value["METHOD"]);
+						$dataf .= "\t\$scope.".$value_value["NAME"]." = function () {\n";
+						$dataf .= "\t\t\$scope.loading = true;\n";
+						$dataf .= "\t\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
+						$dataf .= "\t\t\tobject: '".$value["OBJECT"]."',\n";
+						foreach ($list_f_input as $key_input => $value_input) {
+							$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value["ITEM"].".".$value_input["NAME"].",\n";
+						}
+						$dataf .= "\t\t\tmethod: '".$value_value["METHOD"]."'\n";
+						$dataf .= "\t\t}}).success(function (data, status, headers, config) {\n";
+						if ($value_value["ACTION"] == "create") $dataf .= "\t\t\t\$scope.".$value["COLLECTOR"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
+						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]." = data;\n";
+						$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
+						$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
+						$dataf .= "\t\t}).finally(function () {\n";
+						$dataf .= "\t\t\t\$scope.loading = false;\n";
+						$dataf .= "\t\t});\n\n";
+						$dataf .="\t};\n\n";
+					}
+					if ($value_value["NODE_NAME"] == "VARIABLE") {
+						$datav .= "\t\$scope.".$value_value["NAME"]." = ".$value_value["VALOR"].";\n";
+					}
+				}				
+			}
+			if (isset($datav)) $data .= $datav;
+			if (isset($dataf)) $data .= $dataf;
+			// Habilitar el cambio del texto de los enums cada vez que cambie uno de ellos.
+			$datae = "";
+			$list_f_enum = $clase->list_enum_fields();
+			foreach ($list_f_enum as $key_enum => $value_enum) {
+				var_dump($value_enum);
+				$datae .= "\t\$scope.text_enum_".$key_enum." = {\n";
+				for ($keyve = 0; $keyve < count($value_enum) - 1; $keyve++) {
+					$valueve = $value_enum[$keyve];
+					$datae .= "\t\t".$valueve["VALUE"]." : { value: ".$valueve["VALUE"].", name: \"".$valueve["NAME"]."\", text: \"".$valueve["TEXT"]."\" },\n";
+				}
+				$valueve = $value_enum[$keyve];
+				$datae .= "\t\t".$valueve["VALUE"]." : { value: ".$valueve["VALUE"].", name: \"".$valueve["NAME"]."\", text: \"".$valueve["TEXT"]."\" }\n";
+				$datae .="\t};\n\n";
+			}
+			if (isset($datae)) $data .= $datae;
+			var_dump($list_f_enum);
 			$data .= "});\n";
 			echo $data;
 			file_put_contents($path, $data);

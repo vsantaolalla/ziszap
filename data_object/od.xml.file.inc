@@ -1,4 +1,4 @@
-<?
+<?php
 
 class xml_file_object {
 	var $classname = "xml_file_object";

@@ -1,4 +1,4 @@
-<? 
+<?php
 $_console = FALSE;
 if (isset($_SERVER["argc"])) {
     for ($i=1; $i < $_SERVER["argc"]; $i++) {

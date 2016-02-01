@@ -1,4 +1,4 @@
-<?PHP
+<?php
 
 //
 // Ziszap Portal System Objects.
@@ -107,7 +107,18 @@ class generical_object {
 
 			if (isset($parser->arrOutput[0]["CONTROLLERS"][0]["CONTROLLER"])) {
 				foreach ($parser->arrOutput[0]["CONTROLLERS"][0]["CONTROLLER"] as $key => $value) {
-					$this->controllers[$value["attr"][0]["NAME"]] = $value["attr"][0];
+					$this->controllers[$key] = $value["attr"][0];
+					foreach ($value as $c_key => $cntr) {
+						if (!is_array($cntr)) continue;
+						if (isset($cntr[1]["attr"][0]))
+							foreach ($cntr as $num => $cmd) {
+								$cmd["attr"][0]["NODE_NAME"] = $cmd["name"];
+								$this->controllers[$key][] = $cmd["attr"][0];
+							}
+						else if (isset($cntr[0]["attr"][0])){
+							$this->controllers[$key][] = $cntr[0]["attr"][0];
+						}
+					} 
 				}
 			}
 		}
@@ -247,8 +258,10 @@ class generical_object {
 		return NULL;
 	}
 	
-	function list_input_methods ($method) {
+	function list_input_method ($method) {
 		$var_arr = array();
+		$input_arr = Array();
+		$list_fields = $this->list_fields();
 		$methods = $this->get_method($method);
 		if (is_null($methods)) return NULL;
 		foreach ($this->get_method($method) as $key => $value) {
@@ -260,7 +273,15 @@ class generical_object {
 				}
 			}
 		}
-		return $var_arr;
+
+		foreach ($var_arr as $key => $value) {
+			$input_data_temp = explode(",", $value["FIELD"]);
+			foreach ($input_data_temp as $key_temp => $value_temp) {
+				$input_arr[$value_temp] = $list_fields[$value_temp];
+			}
+		}
+		
+		return $input_arr;
 	}
 	
 	function list_transactions() {

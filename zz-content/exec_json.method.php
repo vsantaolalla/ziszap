@@ -1,4 +1,8 @@
-<?
+<?php
+//	require_once('zz-admin/config.php');
+
+//	$link_referer = $_SERVER["HTTP_REFERER"];
+
 	$cmd_in = Array();
 	$cmd_out = Array();
 	$method_call = "";
@@ -10,7 +14,7 @@
 	}
 	
 	if (!isset($cmd_in["object"])) {
-		header('HTTP/1.1 405 Method Not Allowed.');
+		header('HTTP/1.1 405 Method Not Allowed1');
 		echo "error";
 		die();
 	}
@@ -20,7 +24,7 @@
 	unset($cmd_in["object"]);
 
 	if (!isset($cmd_in["method"])) {
-		header('HTTP/1.1 405 Method Not Allowed.');
+		header('HTTP/1.1 405 Method Not Allowed2');
 		echo "error";
 		die();
 	}
@@ -30,7 +34,8 @@
 	eval ("\$result = \$T->".$method_call."(\$cmd_in, \$cmd_out);");
 	if ($result) {
 		if (! $cmd_out)
-			header('HTTP/1.1 204 No Content.');
+			header('HTTP/1.1 204 No Content');
+		// Check if key is the enum field. if checked add "{key}.text" with text field.
 		foreach (reset($cmd_out) as $key => $value) {
 			// Si el campo es enum, para todos los valores del campo generamos el key.text 
 			if ($T->get_fieldType($key) == "enum") {

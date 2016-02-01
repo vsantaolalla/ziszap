@@ -1,7 +1,6 @@
-<?
+<?php
 
 require_once("data_object/o.database.inc");
-require_once("zz-admin/config.php");
 
 class database_object extends generical_object_database {
 
