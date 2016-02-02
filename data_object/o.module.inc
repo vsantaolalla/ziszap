@@ -894,8 +894,13 @@ class object_module extends generical_object {
 						}
 						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["ITEM"]." = data;\n";
 						if ($value_value["ACTION"] == "write") {
-							$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]."[\$scope._search(\$scope.".$value["CONTAINER"].".xxxxx)] = data;\n";
-							$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value["CONTAINER"].".length; i++) {\t\t\tif (\$scope.".$value["CONTAINER"]."[i].xxxxx === id) return i;\t\t}\t};";
+							if (isset($value["INDEX"])) {
+								$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]."[\$scope._search(\$scope.".$value["ITEM"].".".$value["INDEX"].")] = data;\n";
+								$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value["COLLECTOR"].".length; i++) {\n\t\t\tif (\$scope.".$value["COLLECTOR"]."[i].".$value["INDEX"]." === id) return i;\n\t\t}\n\t};\n\n";
+							} else {
+								$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]."[\$scope._search(\$scope.".$value["ITEM"].".xxxxx)] = data;\n";
+								$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value["COLLECTOR"].".length; i++) {\n\t\t\tif (\$scope.".$value["COLLECTOR"]."[i].xxxxx === id) return i;\n\t\t}\n\t};\n\n";
+							}
 						}
 						$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
 						$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
