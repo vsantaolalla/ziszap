@@ -827,7 +827,7 @@ class object_module extends generical_object {
 		
 		$path = get_directory()."/js/controllers/ctrl_".$value["NAME"].".js";
 
-		if ( file_exists($path)) {
+		if (! file_exists($path)) {
 			$data = "";
 //			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$routeParams, \$http) {\n";
 			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$http) {\n";
@@ -851,6 +851,7 @@ class object_module extends generical_object {
 			// Lista todas las funciones y variables en el controller. 
 			$dataf = "";
 			$datav = "";
+			$datas = "";
 			$list_f_enum = $clase->list_enum_fields();
 			for ($index = 0; isset($value[$index]); $index++) {
 				$value_value = Array();
@@ -892,6 +893,10 @@ class object_module extends generical_object {
 							$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
 						}
 						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["ITEM"]." = data;\n";
+						if ($value_value["ACTION"] == "write") {
+							$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]."[\$scope._search(\$scope.".$value["CONTAINER"].".xxxxx)] = data;\n";
+							$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value["CONTAINER"].".length; i++) {\t\t\tif (\$scope.".$value["CONTAINER"]."[i].xxxxx === id) return i;\t\t}\t};";
+						}
 						$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
 						$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
 						$dataf .= "\t\t}).finally(function () {\n";
@@ -906,6 +911,7 @@ class object_module extends generical_object {
 			}
 			if (isset($datav)) $data .= $datav;
 			if (isset($dataf)) $data .= $dataf;
+			if (isset($datas)) $data .= $datas;
 			// Habilitar el cambio del texto de los enums cada vez que cambie uno de ellos.
 			$datae = "";
 			foreach ($list_f_enum as $key_enum => $value_enum) {
