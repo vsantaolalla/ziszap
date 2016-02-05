@@ -376,6 +376,8 @@ class object_module extends generical_object {
 						$data .= "\t\t\t\t\$this->failed_transaction();\n";
 						$data .= "\t\t\t\treturn FALSE;\n\t\t\t}\n\t\t}\n";
 					}
+				} else if ($func_method["NAME"] == "SQL_IN") {
+					$data .= $this->def_method_sql_in ($func_method);
 				} else if ($func_method["NAME"] == "STORE_INPUT") {
 					$data .= $this->def_method_store_input ($func_method);
 				} else if ($func_method["NAME"] == "GET_VAR") {
@@ -566,6 +568,24 @@ class object_module extends generical_object {
 		return $data;
 	}
 	
+	function def_method_sql_in ($SQL) {
+		global $SQL_EXEC;
+
+		$data = "\n";
+		if (isset($SQL["SQL"])) {
+			$data .= "\t\tif (! \$this->sql_exec (\"".$SQL["SQL"]."\", \$data_in) ) {\n";
+			$data .= "\t\t\t\$this->failed_transaction();\n";
+			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if (isset($SQL["ARRAY_KEY"]))
+				$data .= "\t\tif (! \$this->list_object_key (\$data_in, \$data_in[\"".$SQL["ARRAY_NAME"]."\"], \"".$SQL["ARRAY_KEY"]."\") ) {\n";
+			else 
+				$data .= "\t\tif (! \$this->list_object (\$data_in, \$data_in[\"".$SQL["ARRAY_NAME"]."\"]) ) {\n";
+			$data .= "\t\t\t\$this->failed_transaction();\n";
+			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+		}
+		return $data;
+	}
+
 	function def_method_store_input ($SQL) {
 		global $SQL_EXEC;
 		
@@ -914,7 +934,7 @@ class object_module extends generical_object {
 					}
 				}				
 			}
-			if (isset($datav)) $data .= $datav;
+			if (isset($datav)) $data .= $datav."\n";
 			if (isset($dataf)) $data .= $dataf;
 			if (isset($datas)) $data .= $datas;
 			// Habilitar el cambio del texto de los enums cada vez que cambie uno de ellos.

@@ -131,9 +131,7 @@ abstract class Object {
 		//print_r($o_form);
 	}
 	
-	function list_object   ($i_form, &$o_form) {
-		global $func_debug;
-			
+	function list_object ($i_form, &$o_form) {
 		$values = $this->first_item();
 		while (! $this->is_empty()) {
 			if (is_array($values))
@@ -143,6 +141,16 @@ abstract class Object {
 		return TRUE;
 	}
 	
+	function list_object_key ($i_form, &$o_form, $key) {
+		$values = $this->first_item();
+		while (! $this->is_empty()) {
+			if (is_array($values))
+				$o_form[$values[$key]] = $values;
+			$values = $this->next_item();
+		}	
+		return TRUE;
+	}
+
 	function view_object   ($i_form, &$o_form) {
 		$o_form = $this->next_item();
 		return TRUE;
