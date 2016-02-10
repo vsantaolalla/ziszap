@@ -1,0 +1,31 @@
+<object name="session">
+<fields>
+	<field name="ses_id" type="varchar" cardinal="30" null="no" text="ID sessio" />
+</fields>
+<fields_external>
+	<field_external name="usulgn" object="authdb" table="zUser" field="usulgn" text="Nombre del usuario" />
+</fields_external>
+
+<tables>
+	<table name="SESSION" fields="ses_id,usulgn" pkey="ses_id" ukey="ses_id" />
+</tables>
+
+<methods>
+	<method name="register_session" object="session" function="create_object">
+		<input object="session" field="ses_id,usulgn" />
+		<store_output object="session" table="SESSION" action="create" field="ses_id,usulgn" />
+	</method>
+	<method name="update_session" object="session" function="create_object">
+		<input object="session" field="ses_id,usulgn" />
+		<store_output object="session" table="SESSION" action="update" field="ses_id,usulgn" />
+	</method>
+	<method name="is_registered_session" object="session" function="view_object">
+		<input object="session" field="ses_id" />
+		<store_input object="session" table="SESSION" action="read" field="ses_id,usulgn" />
+	</method>
+	<method name="unregister_session" object="session" function="delete_object">
+		<input object="session" field="ses_id" />
+		<store_output object="session" table="SESSION" action="delete" field="ses_id" />
+	</method>
+</methods>
+</object>
