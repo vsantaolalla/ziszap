@@ -8,7 +8,7 @@
 //
 
 require ("zz-admin/config.php");
-
+global $db_connhandle;
 
 abstract class Object {
 	abstract protected function flush_data ();
@@ -26,26 +26,42 @@ abstract class Object {
 	public $last_insert_id;
 	
 	function begin_database_transaction () {
+		global $db_connhandle;
+
 		$this->errors_transactions = FALSE;	
 		$sql = "START TRANSACTION;";
-		@mysql_query($sql.";");
+		@mysqli_query($db_connhandle, $sql.";");
 	}
 	
 	function end_database_transaction () {
+		global $db_connhandle;
+
 		if (! $this->errors_transactions) {	
 			$sql = "COMMIT;";
-			@mysql_query($sql.";");
+			@mysqli_query($db_connhandle, $sql.";");
 			return TRUE;
 		} else {
 			$sql = "ROLLBACK;";
-			@mysql_query($sql.";");
+			@mysqli_query($db_connhandle, $sql.";");
 			return FALSE;
 		}
 	}
 	
 	function failed_database_transaction () {
+		global $db_connhandle;
+		global $func_debug;
+
 		$sql = "ROLLBACK;";
-		@mysql_query($sql.";");
+		@mysqli_query($db_connhandle, $sql.";");
+
+		if ( $func_debug ) {
+			$func_backtrace = debug_backtrace();
+			for ($i=0; $i<count($func_backtrace); $i++){
+				echo $func_backtrace[$i]["file"]."=>".$func_backtrace[$i]["function"]."(".$func_backtrace[$i]["line"].")";
+				if (isset($func_backtrace[$i]["args"])) var_dump($func_backtrace[$i]["args"]);
+			}
+		} 
+		$this->errors_transactions = TRUE;
 	}
 
 	function begin_transaction() {
@@ -86,6 +102,10 @@ abstract class Object {
 		return $this->pKey_tables[$table];
 	}
 	
+	function copy_object ($i_form, &$o_form) {
+		$o_form = $i_form;
+		return TRUE;
+	}
 	function create_object ($i_form, &$o_form) {
 		$o_form = $i_form;
 		return TRUE;
@@ -242,6 +262,8 @@ abstract class Object {
 
 	function sql_search ($fieldsSQL, $table, $data_in, $needle, $haystack) {
 		global $func_debug;
+		global $db_connhandle;
+
 		$fieldsSELECT = $fieldsSQL[0];
 		$index_select = 1;
 		$fieldsHAYSTACK = $haystack[0];
@@ -263,16 +285,17 @@ abstract class Object {
 		// ALTER TABLE nombretabla ADD FULLTEXT(<campos $haystack>);
 		// Para eliminar el antiguo: ALTER TABLE nombretabla DROP nombreindex;
 		// Para ver la estructura de la tabla: SHOW CREATE TABLE nombretabla;
-		$this->qhandle = @mysql_query($sql.";") or $this->object_error("sql_search ".$table." failed");
+		$this->qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_search ".$table." failed");
 		$this->index_bbdd = 0;
-		$this->count_bbdd = mysql_num_rows($this->qhandle);
+		$this->count_bbdd = mysqli_num_rows($this->qhandle);
 		$this->bbdd_table = $table;
 		return TRUE;
 	}
 
 	function sql_scan ($SQL, $data_in) {
 		global $func_debug;
-		
+		global $db_connhandle;
+
 		if ((!isset($SQL["field"])) || (!isset($SQL["table"]))) {
 			$this->object_error("Not enought parameters in sql_scan");
 			return FALSE;
@@ -290,7 +313,7 @@ abstract class Object {
 			}
 			if (isset($data_in[$value])) {
 				$fieldsSELECT .= $value;
-				$fieldsWHERE .= $value." = '".mysql_real_escape_string($data_in[$value])."'";
+				$fieldsWHERE .= $value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
 			}
 			else {
 				return FALSE;
@@ -298,15 +321,15 @@ abstract class Object {
 		}
 		$sql = "SELECT ".$fieldsSELECT." FROM ".implode(",", $SQL["table"])." WHERE ".$fieldsWHERE;
 		if ($func_debug) echo $sql."\n";
-		$qhandle = @mysql_query($sql.";") or $this->object_error("sql_scan ".implode(",", $SQL["table"])." failed");
-		if (mysql_num_rows($qhandle) > 0) return TRUE;
+		$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_scan ".implode(",", $SQL["table"])." failed");
+		if (mysqli_num_rows($qhandle) > 0) return TRUE;
 		else return FALSE;
 	}
 	
 	function sql_array_read ($SQL, &$data_in) {
 		global $func_debug;
+
 		$values = Array();
-		
 		$this->sql_read($SQL, $data_in);
 		$values = $this->first_item();
 		while (! $this->is_empty()) {
@@ -320,6 +343,7 @@ abstract class Object {
 
 	function sql_read ($SQL, &$data_in) {
 		global $func_debug;
+		global $db_connhandle;
 
 		if ((!isset($SQL["field"])) || (!isset($SQL["table"]))) {
 			$this->object_error("Not enought parameters in sql_read");
@@ -370,12 +394,12 @@ abstract class Object {
 					$first_time = FALSE;
 				}
 				if (($this->fieldsValidate[$value] != "float") && ($this->fieldsValidate[$value] != "double")) {
-					$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysql_real_escape_string($data_in[$value])."'";
+					$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
 				} else {
 					if (is_numeric($data_in[$value]))	
 						$fieldsWHERE .= "ROUND(".$arr_fields[$value].".".$value.",3) = ROUND(".$data_in[$value].",3)";
 					else {
-						$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysql_real_escape_string($data_in[$value])."'";
+						$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
 					}
 				}
 			}
@@ -405,20 +429,22 @@ abstract class Object {
 		}
 		if ($func_debug) echo $sql."\n";
 		unset($this->qhandle);
-		$this->qhandle = @mysql_query($sql.";") or $this->object_error("sql_read ".$table." failed");
+		$this->qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_read ".$table." failed");
 		$this->index_bbdd = 0;
-		$this->count_bbdd = mysql_num_rows($this->qhandle);
+		$this->count_bbdd = mysqli_num_rows($this->qhandle);
 		$this->bbdd_table = $SQL["table"];
 		return TRUE;
 	}
 
 	function sql_exec ($sql, $data_out ) {
 		global $func_debug;
+		global $db_connhandle;
+
 		$strInfo = "";
 		
 		if ($func_debug) echo $sql."\n";
 		unset($this->qhandle);
-		$this->qhandle = @mysql_query($sql.";") or $this->object_error("sql_exec ".$table." failed");
+		$this->qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_exec ".$table." failed");
 //		$this->count_bbdd = mysql_num_rows($this->qhandle);
 //		$this->bbdd_table = $table;
 		return TRUE;
@@ -426,7 +452,7 @@ abstract class Object {
 	
 	function sql_array_write ($SQL, $data_out) {
 		global $func_debug;
-		
+
 		$pExt_tables_all = Array();
 		foreach ($SQL["table"] as $key => $value) {
 			$pExt_tables_all = array_merge($pExt_tables_all, explode(",", $this->pExt_tables[$value]));
@@ -451,6 +477,8 @@ abstract class Object {
 	
 	function sql_write ($SQL, $data_out) { 
 		global $func_debug;
+		global $db_connhandle;
+
 		$fieldsSET = "";
 		$fieldsWHERE = "";
 		$first_time = TRUE;
@@ -466,7 +494,7 @@ abstract class Object {
 			} else {
 				$first_time = FALSE;
 			}
-			if (isset($data_out[$value])) $fieldsSET .= $value." = '".mysql_real_escape_string($data_out[$value])."'";
+			if (isset($data_out[$value])) $fieldsSET .= $value." = '".mysqli_real_escape_string($db_connhandle, $data_out[$value])."'";
 			else {
 				if (in_array($value, $this->fieldsRequired)) {
 					$this->object_error("Not enought fields was required in sql_write");
@@ -489,15 +517,15 @@ abstract class Object {
 				} else {
 					$first_time = FALSE;
 				}
-				$fieldsWHERE .= $value." = '".mysql_real_escape_string($data_out[$value])."'";
+				$fieldsWHERE .= $value." = '".mysqli_real_escape_string($db_connhandle, $data_out[$value])."'";
 			}
 		}
 		
 		$table = implode(",", $SQL["table"]);
 		$sql = "UPDATE ".$table." SET ".$fieldsSET." WHERE ".$fieldsWHERE;
 		if ($func_debug) echo $sql."\n";
-		$qhandle = @mysql_query($sql.";") or $this->object_error("sql_write ".$table." failed");
-		$this->last_insert_id = @mysql_insert_id();
+		$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_write ".$table." failed");
+		$this->last_insert_id = @mysqli_insert_id();
 		return TRUE;
 	}
 
@@ -521,7 +549,7 @@ abstract class Object {
 				$first_time = FALSE;
 			}
 			$fieldsINSERT .= $value;
-			if (isset($data_out[$value])) $fieldsVALUES .= "'".mysql_real_escape_string($data_out[$value])."'";
+			if (isset($data_out[$value])) $fieldsVALUES .= "'".mysqli_real_escape_string($db_connhandle, $data_out[$value])."'";
 			else {
 				if (in_array($value, $this->fieldsRequired)){
 					if ($func_debug) {
@@ -537,13 +565,13 @@ abstract class Object {
 		$sql = "INSERT INTO ".$table." ( ".$fieldsINSERT." ) VALUES (".$fieldsVALUES.")";
 		if ($func_debug){
 			echo $sql."\n";
-			$qhandle = mysql_query($sql.";") or $this->object_error("sql_create ".$table." failed");
+			$qhandle = mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_create ".$table." failed");
 		} 
 		else {
-			$qhandle = @mysql_query($sql.";") or $this->object_error("sql_create ".$table." failed");
+			$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_create ".$table." failed");
 		}
 		
-		$this->last_insert_id = @mysql_insert_id();
+		$this->last_insert_id = @mysqli_insert_id($db_connhandle);
 		if (! $qhandle) {
 			return FALSE;
 		}
@@ -552,6 +580,8 @@ abstract class Object {
 	
 	function sql_delete ($SQL, &$data_in) {
 		global $func_debug;
+		global $db_connhandle;
+
 		$fieldsWHERE = "";
 		$first_time = TRUE;
 		
@@ -567,7 +597,7 @@ abstract class Object {
 				$first_time = FALSE;
 			}
 			if (isset($data_in[$value])) {
-				$fieldsWHERE .= $value." = '".mysql_real_escape_string($data_in[$value])."'";
+				$fieldsWHERE .= $value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
 			}
 			else {
 				return FALSE;
@@ -578,18 +608,20 @@ abstract class Object {
 		$sql = "DELETE FROM ".$table." WHERE ".$fieldsWHERE;
 		if ($func_debug) echo $sql."\n";
 
-		$qhandle = @mysql_query($sql.";") or $this->object_error("sql_delete ".$table." failed");
+		$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_delete ".$table." failed");
 		return TRUE;
 	}
 
 	function first_item() {
-		$this->count_bbdd = mysql_num_rows($this->qhandle);
+		global $db_connhandle;
+
+		$this->count_bbdd = mysqli_num_rows($this->qhandle);
 		if ($this->count_bbdd == 0) {
 			unset($this->array_bbdd);
 			$this->flush_data();
 			return FALSE;
 		}
-		$row = mysql_fetch_assoc($this->qhandle);
+		$row = mysqli_fetch_assoc($this->qhandle);
 		
 		$this->set_data($row);
 		unset($this->array_bbdd);
@@ -599,13 +631,15 @@ abstract class Object {
 	}
 	
 	function next_item() {
+		global $db_connhandle;
+
 		unset($this->array_bbdd);
 		if ($this->count_bbdd <= $this->index_bbdd){
 			$this->flush_data();	
 			return FALSE;
 		}	
 
-		$row = mysql_fetch_assoc($this->qhandle);
+		$row = mysqli_fetch_assoc($this->qhandle);
 
 		$this->set_data($row);
 		$this->array_bbdd = $row;
@@ -769,17 +803,17 @@ abstract class Object {
 		if (count($arr_keys) > 0) echo "<p>\n";
 		foreach ($arr_keys as $k => $key) {
 			if ($this->fieldsValidate[$key] == "varchar") {
-				echo '<input id="c'.$key.'" type="text" name="'.$key.'" value="'.$data_in[$key].'" ';
+				echo '<input id="c'.$key.'" type="text" name="'.$key.'" class="form-control" value="'.$data_in[$key].'" ';
 			} else if (($this->fieldsValidate[$key] == "int") || ($this->fieldsValidate[$key] == "float")){
-				echo '<input id="c'.$key.'" type="digits" name="'.$key.'" value="'.$data_in[$key].'" ';
+				echo '<input id="c'.$key.'" type="digits" name="'.$key.'" class="form-control" value="'.$data_in[$key].'" ';
 				
 			} else if ($this->fieldsValidate[$key] == "date") {
-				echo '<input id="c'.$key.'" type="date" name="'.$key.'" value="'.$data_in[$key].'" ';
+				echo '<input id="c'.$key.'" type="date" name="'.$key.'" class="form-control" value="'.$data_in[$key].'" ';
 			} else if ($this->fieldsValidate[$key] == "enum") {
 				$enum_values = Array();
 				$cmd = "\$enum_values = \$this->enum_".$key.";\n";
 				eval($cmd);
-				echo '<select id="c'.$key.'" name="'.$key.'">';
+				echo '<select id="c'.$key.'" name="'.$key.'" class="form-control">';
 				foreach ($enum_values as $keyi => $valuei) {
 					if ($data_in[$key] == $keyi) {
 						echo '<option selected value="'.$keyi.'">';
@@ -825,7 +859,7 @@ abstract class Object {
 			}
 			$returned_value .= $separator;
 		}
-		return $returned_value;
+		return substr($returned_value, 0, - strlen($separator));
 //		if (count($arr_keys) > 0) echo "</p>\n";
 	}
 	
@@ -857,8 +891,8 @@ abstract class Object {
 }
 
 if (!isset($db_connhandle))
-	$db_connhandle = @mysql_connect($db_host, $db_user, $db_passwd) or Object::object_error("connect_server_database");;
+	$db_connhandle = @mysqli_connect($db_host, $db_user, $db_passwd) or Object::object_error("connect_server_database");;
 if (!isset($db_syshandle))
-	$db_syshandle = @mysql_select_db($database_name) or Object::object_error("select_database");
+	$db_syshandle = @mysqli_select_db($db_connhandle, $database_name) or Object::object_error("select_database");
 
 ?>

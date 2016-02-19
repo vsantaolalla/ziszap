@@ -862,7 +862,7 @@ class object_module extends generical_object {
 			$data .= "\t\tobject: '".$value["OBJECT"]."',\n";
 			$data .= "\t\tmethod: '".$value["METHOD"]."'\n";
 			$data .= "\t}}).success(function (data, status, headers, config) {\n";
-			$data .= "\t\t\$scope.".$value["COLLECTOR"]." = data;\n";
+			$data .= "\t\t\$scope.".explode(".", $value["COLLECTOR"])[0]." = data;\n";
 			$data .= "\t}).error(function (data, status, headers, config) {\n";
 			$data .= "\t\tconsole.error (data, status, headers, config);\n";
 			$data .= "\t}).finally(function () {\n";
