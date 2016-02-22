@@ -108,17 +108,18 @@ class generical_object {
 			if (isset($parser->arrOutput[0]["CONTROLLERS"][0]["CONTROLLER"])) {
 				foreach ($parser->arrOutput[0]["CONTROLLERS"][0]["CONTROLLER"] as $key => $value) {
 					$this->controllers[$key] = $value["attr"][0];
-					foreach ($value as $c_key => $cntr) {
-						if (!is_array($cntr)) continue;
-						if (isset($cntr[1]["attr"][0]))
-							foreach ($cntr as $num => $cmd) {
-								$cmd["attr"][0]["NODE_NAME"] = $cmd["name"];
-								$this->controllers[$key][] = $cmd["attr"][0];
-							}
-						else if (isset($cntr[0]["attr"][0])){
-							$this->controllers[$key][] = $cntr[0]["attr"][0];
-						}
+					$list_functions = isset($value["FUNCTION"]) ? $value["FUNCTION"] : Array();
+					$list_vars = isset($value["VARIABLE"]) ? $value["VARIABLE"] : Array();
+					$list_arrays = isset($value["ARRAY"]) ? $value["ARRAY"] : Array();
+					foreach ($list_functions as $c_key => $cntr) {
+						$this->controllers[$key]["FUNCTION"][] = $cntr["attr"][0];
 					} 
+					foreach ($list_vars as $c_key => $cntr) {
+						$this->controllers[$key]["VARIABLE"][] = $cntr["attr"][0];
+					}
+					foreach ($list_arrays as $c_key => $cntr) {
+						$this->controllers[$key]["ARRAY"][] = $cntr["attr"][0];
+					}
 				}
 			}
 		}

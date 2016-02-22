@@ -294,6 +294,7 @@ class object_module extends generical_object {
 			$list_global_vars = $this->def_method_arrays($value);
 			for ($index = 0; isset($value[$index]); $index++) {
 				$value_value = $value[$index];
+//				var_dump($value_value);
 //				print_r($value_value);
 				if (isset($value_value["NAME"])) {
 					if (($value_value["NAME"] == "ACCESS") || ($value_value["NAME"] == "NOACCESS")) {
@@ -614,6 +615,11 @@ class object_module extends generical_object {
 			$SQL_EXEC["table"] = $SQL["TABLE"];
 		}
 		
+		// Aqui definim el filter si existeix com un camp més en el SQL. (un where).
+		if (isset($SQL["filter"])) {
+			$data .= "\t\t\$SQL[\"filter\"] = \"". $SQL["filter"] ."\"];\n";
+		}
+
 		// Aqui definim diferents comandes per diferents accions.
 		$action = $SQL["ACTION"];
 		if ($action == "scan") {
@@ -683,6 +689,11 @@ class object_module extends generical_object {
 			$fields_TABLE = explode(",", $SQL["TABLE"]);
 			$data .= "\t\t\$SQL[\"table\"] = Array ('".implode("','", $fields_TABLE )."');\n";
 			$SQL_EXEC["table"] = $SQL["TABLE"];
+		}
+
+		// Aqui definim el filter si existeix com un camp més en el SQL. (un where).
+		if (isset($SQL["FILTER"])) {
+			$data .= "\t\t\$SQL[\"filter\"] = \"". $SQL["FILTER"] ."\";\n";
 		}
 
 		// Aqui definim diferents comandes per diferents accions.
@@ -839,30 +850,31 @@ class object_module extends generical_object {
 		}
 	}
 	
-	protected function create_controller ($object, $value)
+	protected function create_controller ($object, $value_xml)
 	{
 		global $GLOBALS;
 		global $app_name;
 		global $clase;		
 		
-		$path = get_directory()."/js/controllers/ctrl_".$value["NAME"].".js";
+		$path = get_directory()."/js/controllers/ctrl_".$value_xml["NAME"].".js";
 
 		if (! file_exists($path)) {
+//		if (TRUE) {
 			$data = "";
 //			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$routeParams, \$http) {\n";
-			$data .= "angular.module('".$app_name."').controller('".$value["NAME"]."', function(\$scope, \$http) {\n";
+			$data .= "angular.module('".$app_name."').controller('".$value_xml["NAME"]."', function(\$scope, \$http) {\n";
 			$data .= "\t\$scope.loading = true;\n";
 			$data .= "\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
-			if (isset($value["FIELD"])) {
-				$list_fields = explode(",", $value["FIELD"]);
+			if (isset($value_xml["FIELD"])) {
+				$list_fields = explode(",", $value_xml["FIELD"]);
 				foreach ($list_fields as $key => $field) {
 					$data .= "\t\t".trim($field).": ".trim($field).",\n";
 				}
 			}
-			$data .= "\t\tobject: '".$value["OBJECT"]."',\n";
-			$data .= "\t\tmethod: '".$value["METHOD"]."'\n";
+			$data .= "\t\tobject: '".$value_xml["OBJECT"]."',\n";
+			$data .= "\t\tmethod: '".$value_xml["METHOD"]."'\n";
 			$data .= "\t}}).success(function (data, status, headers, config) {\n";
-			$data .= "\t\t\$scope.".explode(".", $value["COLLECTOR"])[0]." = data;\n";
+			$data .= "\t\t\$scope.".explode(".", $value_xml["COLLECTOR"])[0]." = data;\n";
 			$data .= "\t}).error(function (data, status, headers, config) {\n";
 			$data .= "\t\tconsole.error (data, status, headers, config);\n";
 			$data .= "\t}).finally(function () {\n";
@@ -873,67 +885,113 @@ class object_module extends generical_object {
 			$datav = "";
 			$datas = "";
 			$list_f_enum = $clase->list_enum_fields();
-			for ($index = 0; isset($value[$index]); $index++) {
-				$value_value = Array();
-				$value_value = $value[$index];
-				if (isset($value_value["NODE_NAME"])) {
-					if ($value_value["NODE_NAME"] == "FUNCTION") {
-						$list_f_input = $clase->list_input_method($value_value["METHOD"]);
-						if (isset($value_value["FIELD"])) {
-							$parameters_function = Array();
-							$dataf .= "\t\$scope.".$value_value["NAME"]." = function (";
-							$parameters_function = explode(",", $value_value["FIELD"]);
-							for ($index_pf = 0; $index_pf < count($parameters_function) - 1; $index_pf++) {
-								$dataf .= trim($parameters_function[$index_pf]).", ";
-							}
-							$dataf .= trim($parameters_function[$index_pf]);
-							$dataf .= ") {\n";
+
+			$list_functions = isset($value_xml["FUNCTION"]) ? $value_xml["FUNCTION"] : Array();
+			foreach ($list_functions as $key => $value) {
+				$list_f_input = $clase->list_input_method($value["METHOD"]);
+				if (isset($value["FIELD"])) {
+					$parameters_function = Array();
+					$dataf .= "\t\$scope.".$value["NAME"]." = function (";
+					$parameters_function = explode(",", $value["FIELD"]);
+					for ($index_pf = 0; $index_pf < count($parameters_function) - 1; $index_pf++) {
+						$dataf .= trim($parameters_function[$index_pf]).", ";
+					}
+					$dataf .= trim($parameters_function[$index_pf]);
+					$dataf .= ") {\n";
+				} else {
+					$dataf .= "\t\$scope.".$value["NAME"]." = function () {\n";
+				}
+				$dataf .= "\t\t\$scope.loading = true;\n";
+				$dataf .= "\t\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
+				$dataf .= "\t\t\tobject: '".$value_xml["OBJECT"]."',\n";
+				if (isset($value["FIELD"])) {
+					$parameters_function = explode(",", $value["FIELD"]);
+					foreach ($parameters_function as $key_input => $value_input) {
+						$dataf .= "\t\t\t".$value_input.": ".$value_input.",\n";
+					}
+				} else {
+					foreach ($list_f_input as $key_input => $value_input) {
+						if (isset($value["ARRAY"])) {
+							$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value["ARRAY"].".".$value_input["NAME"].",\n";
+						} elseif (isset($value["ITEM"])) {
+							$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value["ITEM"].".".$value_input["NAME"].",\n";
 						} else {
-							$dataf .= "\t\$scope.".$value_value["NAME"]." = function () {\n";
+							$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value_xml["ITEM"].".".$value_input["NAME"].",\n";
 						}
-						$dataf .= "\t\t\$scope.loading = true;\n";
-						$dataf .= "\t\t\$http.get('/zz-content/exec_json.method.php',{ params: {\n";
-						$dataf .= "\t\t\tobject: '".$value["OBJECT"]."',\n";
-						if (isset($value_value["FIELD"])) {
-							$parameters_function = explode(",", $value_value["FIELD"]);
-							foreach ($parameters_function as $key_input => $value_input) {
-								$dataf .= "\t\t\t".$value_input.": ".$value_input.",\n";
-							}
-						} else {
-							foreach ($list_f_input as $key_input => $value_input) {
-								$dataf .= "\t\t\t".$value_input["NAME"].": \$scope.".$value["ITEM"].".".$value_input["NAME"].",\n";
-							}
-						}
-						$dataf .= "\t\t\tmethod: '".$value_value["METHOD"]."'\n";
-						$dataf .= "\t\t}}).success(function (data, status, headers, config) {\n";
-						if ($value_value["ACTION"] == "create") {
-							foreach ($list_f_enum as $enum_field => $value_enum_field) {
+					}
+				}
+				$dataf .= "\t\t\tmethod: '".$value["METHOD"]."'\n";
+				$dataf .= "\t\t}}).success(function (data, status, headers, config) {\n";
+				if ($value["ACTION"] == "create") {
+					if (isset($value["CONTAINER"])) {
+						foreach ($list_f_enum as $enum_field => $value_enum_field) {
+							if (isset($value["ITEM"])) {
 								$dataf .= "\t\t\t\$scope.".$value["ITEM"].".".$enum_field."_text = \$scope.text_enum_".$enum_field."[\$scope.".$value["ITEM"].".".$enum_field."].text;\n";
-							}
-							$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
-						}
-						if ($value_value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value["ITEM"]." = data;\n";
-						if ($value_value["ACTION"] == "write") {
-							if (isset($value["INDEX"])) {
-								$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]."[\$scope._search(\$scope.".$value["ITEM"].".".$value["INDEX"].")] = data;\n";
-								$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value["COLLECTOR"].".length; i++) {\n\t\t\tif (\$scope.".$value["COLLECTOR"]."[i].".$value["INDEX"]." === id) return i;\n\t\t}\n\t};\n\n";
 							} else {
-								$dataf .= "\t\t\t\$scope.".$value["COLLECTOR"]."[\$scope._search(\$scope.".$value["ITEM"].".xxxxx)] = data;\n";
-								$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value["COLLECTOR"].".length; i++) {\n\t\t\tif (\$scope.".$value["COLLECTOR"]."[i].xxxxx === id) return i;\n\t\t}\n\t};\n\n";
+								$dataf .= "\t\t\t\$scope.".$value_xml["ITEM"].".".$enum_field."_text = \$scope.text_enum_".$enum_field."[\$scope.".$value_xml["ITEM"].".".$enum_field."].text;\n";
 							}
 						}
-						$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
-						$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
-						$dataf .= "\t\t}).finally(function () {\n";
-						$dataf .= "\t\t\t\$scope.loading = false;\n";
-						$dataf .= "\t\t});\n\n";
-						$dataf .="\t};\n\n";
+						if (isset($value["ITEM"])) {
+							$dataf .= "\t\t\t\$scope.".$value["CONTAINER"].".push(angular.copy(\$scope.".$value["ITEM"]."));\n";
+						} else {
+							$dataf .= "\t\t\t\$scope.".$value["CONTAINER"].".push(angular.copy(\$scope.".$value_xml["ITEM"]."));\n";
+						}
+					} else {
+						foreach ($list_f_enum as $enum_field => $value_enum_field) {
+							$dataf .= "\t\t\t\$scope.".$value_xml["ITEM"].".".$enum_field."_text = \$scope.text_enum_".$enum_field."[\$scope.".$value_xml["ITEM"].".".$enum_field."].text;\n";
+						}
+						$dataf .= "\t\t\t\$scope.".$value_xml["COLLECTOR"].".push(angular.copy(\$scope.".$value_xml["ITEM"]."));\n";
 					}
-					if ($value_value["NODE_NAME"] == "VARIABLE") {
-						$datav .= "\t\$scope.".$value_value["NAME"]." = ".$value_value["VALOR"].";\n";
+				}
+				if ($value["ACTION"] == "read") $dataf .= "\t\t\t\$scope.".$value_xml["ITEM"]." = data;\n";
+				if ($value["ACTION"] == "list") {
+					if (isset($value["CONTAINER"])) {
+						$dataf .= "\t\t\t\$scope.".$value["CONTAINER"].".list = data;\n";
+						$dataf .= "\t\t\t\$scope.".$value["CONTAINER"].".param = { };\n";
+						if (isset($value["FIELD"])) {
+							$parameters_function = explode(",", $value["FIELD"]);
+							foreach ($parameters_function as $key_input => $value_input) {
+								$dataf .= "\t\t\t\$scope.".$value["CONTAINER"].".param.".$value_input." = ".$value_input."\n";
+							}
+						}
 					}
-				}				
+				} 
+				if ($value["ACTION"] == "write") {
+					if (isset($value_xml["INDEX"])) {
+						$dataf .= "\t\t\t\$scope.".$value_xml["COLLECTOR"]."[\$scope._search(\$scope.".$value_xml["ITEM"].".".$value_xml["INDEX"].")] = data;\n";
+						$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value_xml["COLLECTOR"].".length; i++) {\n\t\t\tif (\$scope.".$value_xml["COLLECTOR"]."[i].".$value_xml["INDEX"]." === id) return i;\n\t\t}\n\t};\n\n";
+					} else {
+						$dataf .= "\t\t\t\$scope.".$value_xml["COLLECTOR"]."[\$scope._search(\$scope.".$value_xml["ITEM"].".xxxxx)] = data;\n";
+						$datas .= "\t\$scope._search = function (id) {\n\t\tfor (i=0; i < \$scope.".$value_xml["COLLECTOR"].".length; i++) {\n\t\t\tif (\$scope.".$value_xml["COLLECTOR"]."[i].xxxxx === id) return i;\n\t\t}\n\t};\n\n";
+					}
+				}
+				$dataf .= "\t\t}).error(function (data, status, headers, config) {\n";
+				$dataf .= "\t\t\tconsole.error (data, status, headers, config);\n";
+				$dataf .= "\t\t}).finally(function () {\n";
+				$dataf .= "\t\t\t\$scope.loading = false;\n";
+				$dataf .= "\t\t});\n\n";
+				$dataf .="\t};\n\n";
 			}
+
+			$list_vars = isset($value_xml["VARIABLE"]) ? $value_xml["VARIABLE"] : Array();
+			foreach ($list_vars as $key => $value) {
+				$datav .= "\t\$scope.".$value["NAME"]." = ".$value["VALOR"].";\n";
+			}
+
+			$list_arrays = isset($value_xml["ARRAY"]) ? $value_xml["ARRAY"] : Array();
+			foreach ($list_arrays as $key => $value) {
+				$datav .= "\t\$scope.".$value["NAME"]." = {";
+				if (isset($value["FIELD"])) {
+					$parameters_array = explode(",", $value["FIELD"]);
+					foreach ($parameters_array as $key_arr => $value_arr) {
+						$datav .= " ".$value_arr.": '',";
+					}
+					$datav = substr($datav, 0, -1)." };\n";
+				} else {
+					$datav .= " };\n";
+				}
+			}
+
 			if (isset($datav)) $data .= $datav."\n";
 			if (isset($dataf)) $data .= $dataf;
 			if (isset($datas)) $data .= $datas;

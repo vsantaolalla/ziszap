@@ -404,6 +404,10 @@ abstract class Object {
 				}
 			}
 		}
+		// Si hi ha un filtre es procesa primer el filtre i despres la sentencia where.
+		if (isset($SQL["FILTER"])) {
+			$fieldsWHERE = "( ".$SQL["FILTER"]." ) AND ( ".$fieldsWHERE." )";
+		}
 
 		$first_time = TRUE;
 		// TODO: Si algun cap esta en $data_in i no està en $fieldsSQL cal que ho posi en el where.
@@ -520,6 +524,10 @@ abstract class Object {
 				$fieldsWHERE .= $value." = '".mysqli_real_escape_string($db_connhandle, $data_out[$value])."'";
 			}
 		}
+		// Si hi ha un filtre es procesa primer el filtre i despres la sentencia where.
+		if (isset($SQL["FILTER"])) {
+			$fieldsWHERE = "( ".$SQL["FILTER"]." ) AND ( ".$fieldsWHERE." )";
+		}
 		
 		$table = implode(",", $SQL["table"]);
 		$sql = "UPDATE ".$table." SET ".$fieldsSET." WHERE ".$fieldsWHERE;
@@ -602,6 +610,10 @@ abstract class Object {
 			else {
 				return FALSE;
 			}
+		}
+		// Si hi ha un filtre es procesa primer el filtre i despres la sentencia where.
+		if (isset($SQL["FILTER"])) {
+			$fieldsWHERE = "( ".$SQL["FILTER"]." ) AND ( ".$fieldsWHERE." )";
 		}
 		
 		$table = implode(",", $SQL["table"]);
