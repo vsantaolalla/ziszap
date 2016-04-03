@@ -279,6 +279,10 @@ class database_object extends generical_object_database {
 		$qhandle = @mysql_query($sql.";") or $this->db_mysql_die("Sentence: ".$sql." failed");
 	}
 
+	function alter_delete ($table, $def_field) {
+		
+	}
+
 	protected function db_query($qstring) {
 		$this->sys_datahandle = @mysql_query($this->sys_dbname,$qstring) or $this->db_mysql_die("db_query q_string=".$qstring);
 		return $this->sys_datahandle;

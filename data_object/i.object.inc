@@ -30,6 +30,9 @@ abstract class Object {
 
 		$this->errors_transactions = FALSE;	
 		$sql = "START TRANSACTION;";
+		if ($this->profile) {
+			$this->profile_sql("sql_begin_database_transaction", $sql);
+		}
 		@mysqli_query($db_connhandle, $sql.";");
 	}
 	
@@ -38,10 +41,16 @@ abstract class Object {
 
 		if (! $this->errors_transactions) {	
 			$sql = "COMMIT;";
+			if ($this->profile) {
+				$this->profile_sql("sql_end_database_transaction", $sql);
+			}
 			@mysqli_query($db_connhandle, $sql.";");
 			return TRUE;
 		} else {
 			$sql = "ROLLBACK;";
+			if ($this->profile) {
+				$this->profile_sql("sql_end_database_transaction", $sql);
+			}
 			@mysqli_query($db_connhandle, $sql.";");
 			return FALSE;
 		}
@@ -52,6 +61,9 @@ abstract class Object {
 		global $func_debug;
 
 		$sql = "ROLLBACK;";
+		if ($this->profile) {
+			$this->profile_sql("sql_failed_database_transaction", $sql);
+		}
 		@mysqli_query($db_connhandle, $sql.";");
 
 		if ( $func_debug ) {
@@ -129,26 +141,21 @@ abstract class Object {
 		}
 		return TRUE;
 	}
+
 	function update_select_object ($i_form, &$o_form) {
 		$isFULL = TRUE;
 		$entrada = Array();
 			
-		$entrada = $this->next_item();
-		if (is_array($entrada)) {
-			foreach ($entrada as $key => $value) {
-				if (isset($i_form[$key])) {
-					$entrada[$key] = $i_form[$key];
-				} else {
-					$isFULL = FALSE;
-				}
+		if (!isset($i_form["default"])) return FALSE;
+
+		foreach ($i_form["default"] as $key => $value) {
+			if (isset($i_form[$key])) {
+				$o_form[$key] = $i_form[$key];
+			} else {
+				$o_form[$key] = $value;
 			}
-			$this->update_html_input($entrada, $entrada);
-			if ($isFULL) $o_form = $i_form;
-		} else {
-			$o_form = array_merge($_GET, $_POST);
 		}
 		return TRUE;
-		//print_r($o_form);
 	}
 	
 	function list_object ($i_form, &$o_form) {
@@ -166,6 +173,16 @@ abstract class Object {
 		while (! $this->is_empty()) {
 			if (is_array($values))
 				$o_form[$values[$key]] = $values;
+			$values = $this->next_item();
+		}	
+		return TRUE;
+	}
+
+	function list_object_multiple_key ($i_form, &$o_form, $key) {
+		$values = $this->first_item();
+		while (! $this->is_empty()) {
+			if (is_array($values))
+				$o_form[$values[$key]][] = $values;
 			$values = $this->next_item();
 		}	
 		return TRUE;
@@ -279,6 +296,9 @@ abstract class Object {
 			
 		$sql = "SELECT ".$fieldsSELECT.", MATCH(".$fieldsHAYSTACK.") AGAINST ('".$needle."' in boolean mode) as relevancy FROM ".$table." WHERE MATCH(".$fieldsHAYSTACK.") AGAINST ('".$needle."' in boolean mode) order by relevancy desc";
 		if ($func_debug) echo $sql."\n";
+		if ($this->profile) {
+			$this->profile_sql("sql_search", $sql);
+		}
 		unset($this->qhandle);
 		// Si hay problema hay que verificar lo siguiente:
 		// ALTER TABLE nombretabla engine=MyISAM;
@@ -300,6 +320,12 @@ abstract class Object {
 			$this->object_error("Not enought parameters in sql_scan");
 			return FALSE;
 		}
+
+		if (isset($SQL["environ"])) {
+			$values_in = $data_in[$SQL["environ"]];
+		} else {
+			$values_in = $data_in;
+		}
 		
 		$fieldsSELECT = "";
 		$fieldsWHERE = "";
@@ -311,9 +337,9 @@ abstract class Object {
 			} else {
 				$first_time = FALSE;
 			}
-			if (isset($data_in[$value])) {
+			if (isset($values_in[$value])) {
 				$fieldsSELECT .= $value;
-				$fieldsWHERE .= $value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
+				$fieldsWHERE .= $value." = '".mysqli_real_escape_string($db_connhandle, $values_in[$value])."'";
 			}
 			else {
 				return FALSE;
@@ -321,20 +347,59 @@ abstract class Object {
 		}
 		$sql = "SELECT ".$fieldsSELECT." FROM ".implode(",", $SQL["table"])." WHERE ".$fieldsWHERE;
 		if ($func_debug) echo $sql."\n";
+		if ($this->profile) {
+			$this->profile_sql("sql_scan", $sql);
+		}
 		$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_scan ".implode(",", $SQL["table"])." failed");
 		if (mysqli_num_rows($qhandle) > 0) return TRUE;
 		else return FALSE;
 	}
 	
+	function sql_array_get ($SQL, &$data_in) {
+		global $func_debug;
+
+		$values = Array();
+		$this->sql_read($SQL, $data_in);
+
+		$values = $this->first_item();
+		if (isset($SQL["environ"])) {
+			$data_in[$SQL["environ"]][$SQL["array"]] = $values;
+		} else {
+			$data_in[$SQL["array"]] = $values;
+		}
+		return TRUE;
+	}
+
+	function sql_get ($SQL, &$data_in) {
+		global $func_debug;
+
+		$values = Array();
+		$this->sql_read($SQL, $data_in);
+
+		$values = $this->first_item();
+		if (isset($SQL["environ"])) {
+			$data_in[$SQL["environ"]] = $values;
+		} else {
+			$data_in = $values;
+		}
+		return TRUE;
+	}
+
 	function sql_array_read ($SQL, &$data_in) {
 		global $func_debug;
 
 		$values = Array();
 		$this->sql_read($SQL, $data_in);
 		$values = $this->first_item();
+		$value_key = isset($SQL["array_key"]) ? $SQL["array_key"] : '@#@#';
+		
 		while (! $this->is_empty()) {
 			if (is_array($values)) {
-				$data_in[$SQL["array"]][] = $values;
+				if (isset($values[$value_key])) {
+					$data_in[$SQL["array"]][$values[$SQL["array_key"]]] = $values;
+				} else {
+					$data_in[$SQL["array"]][] = $values;
+				}
 			}
 			$values = $this->next_item();
 		}
@@ -350,6 +415,12 @@ abstract class Object {
 			return FALSE;
 		}
 		
+		if (isset($SQL["environ"])) {
+			$values_in = $data_in[$SQL["environ"]];
+		} else {
+			$values_in = $data_in;
+		}
+
 		$fieldsSELECT = "";
 		$fieldsWHERE = "";
 		$first_time = TRUE;
@@ -387,19 +458,19 @@ abstract class Object {
 		}
 		
 		foreach ($arr_WHERE as $key => $value) {
-			if (isset($data_in[$value])) {
+			if (isset($values_in[$value])) {
 				if (!$first_time) {
 					$fieldsWHERE .= " AND ";
 				} else {
 					$first_time = FALSE;
 				}
 				if (($this->fieldsValidate[$value] != "float") && ($this->fieldsValidate[$value] != "double")) {
-					$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
+					$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysqli_real_escape_string($db_connhandle, $values_in[$value])."'";
 				} else {
-					if (is_numeric($data_in[$value]))	
-						$fieldsWHERE .= "ROUND(".$arr_fields[$value].".".$value.",3) = ROUND(".$data_in[$value].",3)";
+					if (is_numeric($values_in[$value]))	
+						$fieldsWHERE .= "ROUND(".$arr_fields[$value].".".$value.",3) = ROUND(".$values_in[$value].",3)";
 					else {
-						$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysqli_real_escape_string($db_connhandle, $data_in[$value])."'";
+						$fieldsWHERE .= $arr_fields[$value].".".$value." = '".mysqli_real_escape_string($db_connhandle, $values_in[$value])."'";
 					}
 				}
 			}
@@ -410,7 +481,7 @@ abstract class Object {
 		}
 
 		$first_time = TRUE;
-		// TODO: Si algun cap esta en $data_in i no està en $fieldsSQL cal que ho posi en el where.
+		// TODO: Si algun cap esta en $values_in i no està en $fieldsSQL cal que ho posi en el where.
 		foreach ($SQL["field"] as $key => $value) {
 			if (!$first_time){
 				$fieldsSELECT .= ",";
@@ -432,6 +503,9 @@ abstract class Object {
 			$sql = "SELECT ".$fieldsSELECT." FROM ".$table." WHERE ".$fieldsWHERE;
 		}
 		if ($func_debug) echo $sql."\n";
+		if ($this->profile) {
+			$this->profile_sql("sql_read", $sql);
+		}
 		unset($this->qhandle);
 		$this->qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_read ".$table." failed");
 		$this->index_bbdd = 0;
@@ -440,13 +514,16 @@ abstract class Object {
 		return TRUE;
 	}
 
-	function sql_exec ($sql, $data_out ) {
+	function sql_exec ($sql, $data_out = Array()) {
 		global $func_debug;
 		global $db_connhandle;
 
 		$strInfo = "";
 		
 		if ($func_debug) echo $sql."\n";
+		if ($this->profile) {
+			$this->profile_sql("sql_exec", $sql);
+		}
 		unset($this->qhandle);
 		$this->qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_exec ".$table." failed");
 //		$this->count_bbdd = mysql_num_rows($this->qhandle);
@@ -531,13 +608,16 @@ abstract class Object {
 		
 		$table = implode(",", $SQL["table"]);
 		$sql = "UPDATE ".$table." SET ".$fieldsSET." WHERE ".$fieldsWHERE;
+		if ($this->profile) {
+			$this->profile_sql("sql_write", $sql);
+		}
 		if ($func_debug) echo $sql."\n";
 		$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_write ".$table." failed");
 		$this->last_insert_id = @mysqli_insert_id();
 		return TRUE;
 	}
 
-	function sql_create ($SQL, $data_out) {
+	function sql_create ($SQL, &$data_out) {
 		global $db_connhandle;
 		global $func_debug;
 		$fieldsINSERT = "";
@@ -571,6 +651,9 @@ abstract class Object {
 
 		$table = implode(",", $SQL["table"]);
 		$sql = "INSERT INTO ".$table." ( ".$fieldsINSERT." ) VALUES (".$fieldsVALUES.")";
+		if ($this->profile) {
+			$this->profile_sql("sql_create", $sql);
+		}
 		if ($func_debug){
 			echo $sql."\n";
 			$qhandle = mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_create ".$table." failed");
@@ -580,6 +663,10 @@ abstract class Object {
 		}
 		
 		$this->last_insert_id = @mysqli_insert_id($db_connhandle);
+		if (isset($this->AInc_tables[$table])) {
+			$data_out[$this->AInc_tables[$table]] = $this->last_insert_id;
+		}
+
 		if (! $qhandle) {
 			return FALSE;
 		}
@@ -747,6 +834,14 @@ abstract class Object {
 			return $this->fieldsValidate[$key];
 		}
 	}
+
+	function list_enum_fields ($key) {
+		$enum_values = Array();
+
+		$cmd = "\$enum_values = \$this->enum_".$key.";\n";
+		eval($cmd);
+		return $enum_values;
+	}
 	
 	function update_html_input ($listFields, $data_in = Array()) {
 		global $func_debug;
@@ -903,8 +998,8 @@ abstract class Object {
 }
 
 if (!isset($db_connhandle))
-	$db_connhandle = @mysqli_connect($db_host, $db_user, $db_passwd) or Object::object_error("connect_server_database");;
-if (!isset($db_syshandle))
-	$db_syshandle = @mysqli_select_db($db_connhandle, $database_name) or Object::object_error("select_database");
+	$db_connhandle = @mysqli_connect($db_host, $db_user, $db_passwd, $database_name) or Object::object_error("connect_server_database");;
+//if (!isset($db_syshandle))
+//	$db_syshandle = @mysqli_select_db($db_connhandle, $database_name) or Object::object_error("select_database");
 
 ?>

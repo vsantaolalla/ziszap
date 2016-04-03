@@ -16,6 +16,7 @@ $SQL_EXEC = Array();
 class object_module extends generical_object {
 //	var $classname = "object_module";
 
+	protected $profile;
 	function object_module () {
 		parent::generical_object ();
 	}
@@ -100,23 +101,38 @@ class object_module extends generical_object {
 		}
 	}
 
-	function create_class ($object) {
+	function create_class ($object, $profile = false) {
 		global $clase;
 		global $GLOBALS;
+
+		$data_error = Array();
+
+		if ($profile) {
+			$path = get_directory()."/zz-object/".$object."/profile.php";
+			$path_thread = $path."/zz-object/".$object."/threads/";
+			$this->profile = true;
+		} else {
+			$path = get_directory()."/zz-object/".$object."/class.php";
+			$this->profile = false;
+		}
 		
-		$path = get_directory()."/zz-object/".$object."/class.php";
 		$object_class = "z_".$object;
 		$data = "<?php \n";
-		$data .= "require_once \"data_object/i.object.inc\";\n\n";
+		if ($profile) {
+			$data .= "require_once \"data_object/i.thread.inc\";\n";
+			$data .= "class ".$object_class." extends Object_Thread {\n";
+		} else {
+			$data .= "require_once \"data_object/i.object.inc\";\n\n";
+			$data .= "class ".$object_class." extends Object {\n";
+		}
 		
 		// Recreamos la variable de $cmd para generar l'objecte.
 		$cmd = "class ".$object." extends generical_object {\n\tvar \$classname = \"".$object."\";\n }\n\$clase=new ".$object."();\n";
 //		echo $cmd;
-		eval($cmd);
+		if (! isset($clase)) eval($cmd);
 		
-		$data .= "class ".$object_class." extends Object {\n";
 		$data .= "\tvar \$classname = \"".$object_class."\";\n\n";
-
+		
 		foreach ($clase->list_fields() as $key => $value) {
 //			print_r($value);
 			if (isset($value["TYPE"])) {
@@ -164,6 +180,20 @@ class object_module extends generical_object {
 					$first_time = FALSE;
 				}
 				$data .= "'".$value["NAME"]."' => '".$value["EXTERNAL"]."'";
+			}
+		}
+		$data .= ");\n";
+
+		$data .= "\tprotected	\$AInc_tables = Array (";
+		$first_time = TRUE;
+		foreach ($clase->list_all_tables() as $key => $value) {
+			if (isset($value["AUTOINCREMENT"])) {
+				if (!$first_time){
+					$data .= ",";
+				} else {
+					$first_time = FALSE;
+				}
+				$data .= "'".$value["NAME"]."' => '".$value["AUTOINCREMENT"]."'";
 			}
 		}
 		$data .= ");\n";
@@ -251,6 +281,12 @@ class object_module extends generical_object {
 		$data .= ");\n";
 
 		$data .= "\tprotected	\$ext_form;\n";
+
+		if ($profile) {
+			$data .= "\tprotected	\$profile = true;\n";
+		} else {
+			$data .= "\tprotected	\$profile = false;\n";
+		}
 
 		$data .= "\n";
 		
@@ -340,6 +376,13 @@ class object_module extends generical_object {
 				$data .= "\t\tglobal \$".$key_lgv.";\n";
 			}
 
+			if (isset($value["DEBUG"])) {
+				$data .= "\t\tglobal \$func_debug;\n";
+				$data .= "\t\t\$func_debug_before = \$func_debug;\n";
+				$data .= "\t\t\$func_debug = TRUE;\n";
+				$data .= "\n\t\tvar_dump(\$data_in);\n";
+			}
+
 			$data .= "\n";
 			if ($enable_acls_groups || $enable_acls_users) {
 				$data .= "\t\trequire_once \"data_object/o.users.inc\";\n";
@@ -355,27 +398,45 @@ class object_module extends generical_object {
 			$data .= "\t\t// AUTO: Funcion ".$value["NAME"]."\n";
 			$data .= "\t\t\$this->flush_data();\n";
 			$data .= "\t\t\$this->begin_transaction();\n";
+			if ($profile) {
+				$data .= "\t\t\$this->profile_start(\"".$value["NAME"]."\");\n";
+				$data .= "\t\t\$this->profile_initialize(\"data_in\", \$data_in);\n";
+			}
 
 			// Inicializamos el SQL_EXEC
 			global $SQL_EXEC;
 			$SQL_EXEC["field"] = "";
 			$SQL_EXEC["table"] = "";
 			$SQL_EXEC["array"] = "";
+			$SQL_EXEC["environ"] = "";
 			
 			// Aqui procesamos las entradas input
 			for ($index = 0; isset($value[$index]); $index++) {
 				$func_method = $value[$index];
 				if ($func_method["NAME"] == "INPUT") {
+					$data .= "\n";
 					$data .= $this->def_method_input ($func_method);
-					if (isset($func_method["FIELD"])) {
+					if (! isset($func_method["ARRAY"])) {
 						$data .= "\t\tif (\$this->create_html_input(\$SQL[\"field\"], \$data_in)) {\n";
 						$data .= "\t\t\t\$this->failed_transaction();\n";
+						if ($profile) {
+							$data .= "\t\t\t\$this->profile_abort(\"input_field\", \$SQL);\n";
+						}
 						$data .= "\t\t\treturn FALSE;\n\t\t}\n";
-					} else if ($func_method["ARRAY_FIELD"]) {
-						$data .= "\t\tforeach (\$data_in[\"".$func_method["ARRAY_NAME"]."\"] as \$key => \$value) {\n";
-						$data .= "\t\t\tif (\$this->create_html_input(\$SQL[\"field\"], \$value)) {\n";
-						$data .= "\t\t\t\t\$this->failed_transaction();\n";
-						$data .= "\t\t\t\treturn FALSE;\n\t\t\t}\n\t\t}\n";
+					} else {
+						$data .= "\t\tforeach (\$SQL[\"field\"] as \$key => \$value) {\n";
+						$data .= "\t\t\tif (! isset(\$data_in[\"".$func_method["ARRAY"]."\"][\$key]) ) {\n";
+						$data .= "\t\t\t\tif (isset(\$data_in[\$key])) {\n";
+						$data .= "\t\t\t\t\t\$data_in[\"".$func_method["ARRAY"]."\"][\$key] = \$data_in[\$key];\n";
+						$data .= "\t\t\t\t}\n";
+						$data .= "\t\t\t}\n";
+						$data .= "\t\t}\n";
+						$data .= "\t\tif (\$this->create_html_input(\$SQL[\"field\"], \$data_in[\"".$func_method["ARRAY"]."\"])) {\n";
+						$data .= "\t\t\t\$this->failed_transaction();\n";
+						if ($profile) {
+							$data .= "\t\t\t\$this->profile_abort(\"input_array\", \$SQL);\n";
+						}
+						$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 					}
 				} else if ($func_method["NAME"] == "SQL_IN") {
 					$data .= $this->def_method_sql_in ($func_method);
@@ -397,9 +458,19 @@ class object_module extends generical_object {
 //				else print_r($value[$index]);
 			}
 			// Aqui ejecutamos el proceso una vez tenemos todos los datos en INPUT
+			$data .= "\n\t\t// Aqui ejecutamos la function (".$value["FUNCTION"].") una vez procesados todos los INPUT\n";
+			if ($profile) {
+				$data .= "\t\t\$this->profile_before_function(\"".$value["FUNCTION"]."\", \$data_in);\n";
+			}
 			$data .= "\t\tif (! \$this->".$value["FUNCTION"]."( \$data_in, \$data_out )) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($profile) {
+				$data .= "\t\t\t\$this->profile_abort_function(\"".$value["FUNCTION"]."\", \$data_out);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($profile) {
+				$data .= "\t\t\$this->profile_after_function(\"".$value["FUNCTION"]."\", \$data_out);\n";
+			}
 
 			// Aqui procesamos las entradas output
 			for ($index = 0; isset($value[$index]); $index++) {
@@ -423,7 +494,18 @@ class object_module extends generical_object {
 				}
 //				else print_r($value[$index]);
 			}
+			if ($profile) {
+				$data .= "\t\t\$this->profile_result(\"data_out\", \$data_out);\n";
+			}
+			if (isset($value["DEBUG"])) {
+				$data .= "\t\t\$func_debug = \$func_debug_before;\n";
+				$data .= "\n\t\tvar_dump(\$data_out);\n";
+			}
+
 			$data .= "\t\t\$this->end_transaction();\n";
+			if ($profile) {
+				$data .= "\t\t\$this->profile_end();\n";
+			}
 			$data .= "\t\treturn TRUE;\n";
 			$data .= "\t}\n\n";
 		}
@@ -460,7 +542,7 @@ class object_module extends generical_object {
 			$this->create_controller ($object, $value);
 		}
 		$data .= "}\n?>\n";
-		echo $data;
+//		echo $data;
 		file_put_contents($path, $data);
 	}
 
@@ -500,6 +582,7 @@ class object_module extends generical_object {
 			$data .= "\t\t}\n";
 		}
 
+		$data .= "\n\t\tvar_dump(\$data_out);\n";
 		$data .= "?>\n";
 		$data .= "\t<input type=\"hidden\" name=\"func\" value=\"<?php echo \$data_in[\"func\"]; ?>\" />\n\n";
 		$data .= "<?php\n\t}\n";
@@ -546,14 +629,14 @@ class object_module extends generical_object {
 //		print_r($fields);
 		global $clase;
 		
-		if (isset($fields["FIELD"])) {
+		if (! isset($fields["ARRAY"])) {
 			$data = "\t\t/** Verify INPUT ".$fields["FIELD"]."  */\n";
 			$data .= "\t\t\$SQL[\"field\"] = Array (";
 			$fields_array = explode(",", $fields["FIELD"]);
-		} elseif (isset($fields["ARRAY_FIELD"])) {
-			$data = "\t\t/** Verify ARRAY_INPUT ".$fields["ARRAY_FIELD"]."  */\n";
+		} else {
+			$data = "\t\t/** Verify ARRAY_INPUT ".$fields["FIELD"]."  */\n";
 			$data .= "\t\t\$SQL[\"field\"] = Array (";
-			$fields_array = explode(",", $fields["ARRAY_FIELD"]);
+			$fields_array = explode(",", $fields["FIELD"]);
 		}
 		$first_time = TRUE;
 		foreach ($fields_array as $key => $value) {
@@ -574,8 +657,13 @@ class object_module extends generical_object {
 
 		$data = "\n";
 		if (isset($SQL["SQL"])) {
-			$data .= "\t\tif (! \$this->sql_exec (\"".$SQL["SQL"]."\", \$data_in) ) {\n";
+			$data = "\t\t/** SQL_INPUT ".$SQL["SQL"]."  */\n";
+			$data .= "\t\t\$SQL[\"sql\"] = \"".$SQL["SQL"]."\";\n";
+			$data .= "\t\tif (! \$this->sql_exec (\$SQL[\"sql\"], \$data_in) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_exec\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 			if (isset($SQL["ARRAY_KEY"]))
 				$data .= "\t\tif (! \$this->list_object_key (\$data_in, \$data_in[\"".$SQL["ARRAY_NAME"]."\"], \"".$SQL["ARRAY_KEY"]."\") ) {\n";
@@ -583,29 +671,36 @@ class object_module extends generical_object {
 				$data .= "\t\tif (! \$this->list_object (\$data_in, \$data_in[\"".$SQL["ARRAY_NAME"]."\"]) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_in\", \$data_in);\n";
+			}
 		}
 		return $data;
 	}
 
 	function def_method_store_input ($SQL) {
 		global $SQL_EXEC;
-		
-		$data = "\n";
-		if (isset($SQL["FIELD"])) {
+
+		$data = "\n\t\t// <store_input action=\"".$SQL["ACTION"]."\" />\n";
+		if (! isset($SQL["ARRAY"])) {
 			if ($SQL_EXEC["field"] != $SQL["FIELD"]) {
 				$fields_array = explode(",", $SQL["FIELD"]);
 				$data .= "\t\t\$SQL[\"field\"] = Array ('".implode("','", $fields_array )."');\n";
 				$SQL_EXEC["field"] = $SQL["FIELD"];			
 			}
-		} elseif ($SQL["ARRAY_FIELD"]) {
-			if ($SQL_EXEC["field"] != $SQL["ARRAY_FIELD"]) {
-				$fields_array = explode(",", $SQL["ARRAY_FIELD"]);
+		} else {
+			if ($SQL_EXEC["field"] != $SQL["FIELD"]) {
+				$fields_array = explode(",", $SQL["FIELD"]);
 				$data .= "\t\t\$SQL[\"field\"] = Array ('".implode("','", $fields_array )."');\n";
-				$SQL_EXEC["field"] = $SQL["ARRAY_FIELD"];
-				if ($SQL_EXEC["array"] != $SQL["ARRAY_NAME"]) {
-					$data .= "\t\t\$SQL[\"array\"] = \"".$SQL["ARRAY_NAME"]."\";\n";
-					$SQL_EXEC["array"] = $SQL["ARRAY_NAME"];		
-				}
+				$SQL_EXEC["field"] = $SQL["FIELD"];
+			}
+			if ($SQL_EXEC["array"] != $SQL["ARRAY"]) {
+				$data .= "\t\t\$SQL[\"array\"] = \"".$SQL["ARRAY"]."\";\n";
+				$SQL_EXEC["array"] = $SQL["ARRAY"];		
+			}
+			if (isset($SQL["KEY"])) {
+				$data .= "\t\t\$SQL[\"array_key\"] = \"".$SQL["KEY"]."\";\n";
+				$SQL_EXEC["array_key"] = $SQL["KEY"];		
 			}
 		}
 
@@ -617,7 +712,19 @@ class object_module extends generical_object {
 		
 		// Aqui definim el filter si existeix com un camp més en el SQL. (un where).
 		if (isset($SQL["filter"])) {
-			$data .= "\t\t\$SQL[\"filter\"] = \"". $SQL["filter"] ."\"];\n";
+			$data .= "\t\t\$SQL[\"filter\"] = \"". $SQL["filter"] ."\";\n";
+		}
+
+		if (isset($SQL["ENVIRON"])) {
+			if ($SQL_EXEC["environ"] != $SQL["ENVIRON"]) {
+				$data .= "\t\t\$SQL[\"environ\"] = \"". $SQL["ENVIRON"] ."\";\n";
+				$SQL_EXEC["environ"] = $SQL["ENVIRON"];
+			}
+		} else {
+			if ($SQL_EXEC["environ"] != "") {
+				$data .= "\t\tunset(\$SQL[\"environ\"]);\n";
+				$SQL_EXEC["environ"] = "";
+			}
 		}
 
 		// Aqui definim diferents comandes per diferents accions.
@@ -625,19 +732,63 @@ class object_module extends generical_object {
 		if ($action == "scan") {
 			$data .= "\t\tif (! \$this->sql_scan (\$SQL, \$data_in) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_scan\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_scan\", \$data_in);\n";
+			}
 		} else if ($action == "noscan") {
 			$data .= "\t\tif (\$this->sql_scan (\$SQL, \$data_in) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_noscan\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
-		} else if ($action == "read" && isset($SQL["FIELD"])) {
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_noscan\", \$data_in);\n";
+			}
+		} else if ($action == "get" && !isset($SQL["ARRAY"])) {
+			$data .= "\t\tif (! \$this->sql_get (\$SQL, \$data_in) ) {\n";
+			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_get_field\", \$SQL);\n";
+			}
+			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_get_field\", \$data_in);\n";
+			}
+		} else if ($action == "get" && isset($SQL["ARRAY"])) {
+			$data .= "\t\tif (! \$this->sql_array_get (\$SQL, \$data_in) ) {\n";
+			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_get_array\", \$SQL);\n";
+			}
+			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_get_array\", \$data_in);\n";
+			}
+		} else if ($action == "read" && !isset($SQL["ARRAY"])) {
 			$data .= "\t\tif (! \$this->sql_read (\$SQL, \$data_in) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_read_field\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
-		} else if ($action == "read" && isset($SQL["ARRAY_FIELD"])) {
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_read_field\", \$data_in);\n";
+			}
+		} else if ($action == "read" && isset($SQL["ARRAY"])) {
 			$data .= "\t\tif (! \$this->sql_array_read (\$SQL, \$data_in) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_read_array\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_read_array\", \$data_in);\n";
+			}
 		} else if ($action == "search") {
 			if (isset($SQL["NEEDLE"])) {
 				$data .= "\t\t\$SQL[\"needle\"]    = \$data_in[\"".$fields["NEEDLE"]."\"];\n";
@@ -658,7 +809,13 @@ class object_module extends generical_object {
 			}
 			$data .= "\t\tif (! \$this->sql_search (\$SQL, \$data_in) ) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_search\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump_in(\"sql_search\", \$data_in);\n";
+			}
 		}
 		return $data;
 	}
@@ -667,21 +824,25 @@ class object_module extends generical_object {
 		global $SQL_EXEC;
 		
 		$data = "\n";
-		if (isset($SQL["FIELD"])) {
+		if (! isset($SQL["ARRAY"])) {
 			if ($SQL_EXEC["field"] != $SQL["FIELD"]) {
 				$fields_array = explode(",", $SQL["FIELD"]);
 				$data .= "\t\t\$SQL[\"field\"] = Array ('".implode("','", $fields_array )."');\n";
 				$SQL_EXEC["field"] = $SQL["FIELD"];			
 			}
-		} elseif ($SQL["ARRAY_FIELD"]) {
-			if ($SQL_EXEC["field"] != $SQL["ARRAY_FIELD"]) {
-				$fields_array = explode(",", $SQL["ARRAY_FIELD"]);
+		} else {
+			if ($SQL_EXEC["field"] != $SQL["FIELD"]) {
+				$fields_array = explode(",", $SQL["FIELD"]);
 				$data .= "\t\t\$SQL[\"field\"] = Array ('".implode("','", $fields_array )."');\n";
-				$SQL_EXEC["field"] = $SQL["ARRAY_FIELD"];
-				if ($SQL_EXEC["array"] != $SQL["ARRAY_NAME"]) {
-					$data .= "\t\t\$SQL[\"array\"] = \"".$SQL["ARRAY_NAME"]."\";\n";
-					$SQL_EXEC["array"] = $SQL["ARRAY_NAME"];		
-				}
+				$SQL_EXEC["field"] = $SQL["FIELD"];
+			}
+			if ($SQL_EXEC["array"] != $SQL["ARRAY"]) {
+				$data .= "\t\t\$SQL[\"array\"] = \"".$SQL["ARRAY"]."\";\n";
+				$SQL_EXEC["array"] = $SQL["ARRAY"];		
+			}
+			if (isset($SQL["KEY"])) {
+				$data .= "\t\t\$SQL[\"array_key\"] = \"".$SQL["KEY"]."\";\n";
+				$SQL_EXEC["array_key"] = $SQL["KEY"];		
 			}
 		}
 
@@ -699,20 +860,44 @@ class object_module extends generical_object {
 		// Aqui definim diferents comandes per diferents accions.
 		$action = $SQL["ACTION"];
 		if ($action == "create") {
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump(\"data_out\", \$data_out);\n";
+			}
 			$data .= "\t\tif (! \$this->sql_create (\$SQL, \$data_out)) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_create\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
-		} else if ($action == "write" && isset($SQL["FIELD"])) {
+		} else if ($action == "write" && !isset($SQL["ARRAY"])) {
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump(\"data_out\", \$data_out);\n";
+			}
 			$data .= "\t\tif (! \$this->sql_write (\$SQL, \$data_out)) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_write_field\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
-		} else if ($action == "write" && isset($SQL["ARRAY_FIELD"])) {
+		} else if ($action == "write" && isset($SQL["ARRAY"])) {
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump(\"data_out\", \$data_out);\n";
+			}
 			$data .= "\t\tif (! \$this->sql_array_write (\$SQL, \$data_out)) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_write_array\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 		} else if ($action == "delete") {
+			if ($this->profile) {
+				$data .= "\t\t\$this->profile_dump(\"data_out\", \$data_out);\n";
+			}
 			$data .= "\t\tif (! \$this->sql_delete (\$SQL, \$data_out)) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort(\"sql_delete\", \$SQL);\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 		}
 		return $data;
@@ -732,6 +917,9 @@ class object_module extends generical_object {
 				$data .= "\t\tif (! isset(\$".$value.")) {\n";
 			}
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort();\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t} else {\n";
 			if ($namearray != "") {
 				$data .= "\t\t\t\$data_in[\"".$value."\"] = \$".$namearray."[\"".$value."\"];\n\t\t}\n";
@@ -748,6 +936,9 @@ class object_module extends generical_object {
 		foreach ($list_fields as $key => $value) {
 			$data .= "\t\tif (! isset(\$data_out[\"".$value."\"])) {\n";
 			$data .= "\t\t\t\$this->failed_transaction();\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_abort();\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t} else {\n";
 			if ($namearray != "") {
 				$data .= "\t\t\t\$".$namearray."[\"".$value."\"] = \$data_out[\"".$value."\"];\n\t\t}\n";
@@ -792,11 +983,17 @@ class object_module extends generical_object {
 			}
 			$data .= ");\n";
 			$data .= "\t\tif (! is_user_allow(\$users_allowed)) {\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_denyaccess();\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 		}
 		if ($fields_deny != "") {
 			$data .= "\t\t\$users_deny = Array ('".$fields_deny."');\n";
 			$data .= "\t\tif (is_user_allow(\$users_deny)) {\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_denyaccess();\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 		}
 		return $data;
@@ -818,11 +1015,17 @@ class object_module extends generical_object {
 			}
 			$data .= ");\n";
 			$data .= "\t\tif (! is_user_belong_group(\$groups_allowed)) {\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_denyaccess();\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 		}
 		if ($fields_deny != "") {
 			$data .= "\t\t\$groups_deny = Array ('".$fields_deny."');\n";
 			$data .= "\t\tif (  is_user_belong_group(\$groups_deny)) {\n";
+			if ($this->profile) {
+				$data .= "\t\t\t\$this->profile_denyaccess();\n";
+			}
 			$data .= "\t\t\treturn FALSE;\n\t\t}\n";
 		}
 		return $data;
@@ -845,7 +1048,6 @@ class object_module extends generical_object {
 		$path = get_directory()."/zz-interface/".$object."_".$value["NAME"].".php";
 		$data .= "?>\n";
 		if (! file_exists($path)) {
-			echo $data;
 			file_put_contents($path, $data);
 		}
 	}
@@ -874,7 +1076,7 @@ class object_module extends generical_object {
 			$data .= "\t\tobject: '".$value_xml["OBJECT"]."',\n";
 			$data .= "\t\tmethod: '".$value_xml["METHOD"]."'\n";
 			$data .= "\t}}).success(function (data, status, headers, config) {\n";
-			$data .= "\t\t\$scope.".explode(".", $value_xml["COLLECTOR"])[0]." = data;\n";
+			$data .= "\t\t\$scope.".current(explode(".", $value_xml["COLLECTOR"]))." = data;\n";
 			$data .= "\t}).error(function (data, status, headers, config) {\n";
 			$data .= "\t\tconsole.error (data, status, headers, config);\n";
 			$data .= "\t}).finally(function () {\n";
@@ -1009,7 +1211,6 @@ class object_module extends generical_object {
 			}
 			if (isset($datae)) $data .= $datae;
 			$data .= "});\n";
-			echo $data;
 			file_put_contents($path, $data);
 		}
 	}
