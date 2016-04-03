@@ -2,7 +2,7 @@
 //	require_once('zz-admin/config.php');
 
 //	$link_referer = $_SERVER["HTTP_REFERER"];
-
+try {
 	$cmd_in = Array();
 	$cmd_out = Array();
 	$method_call = "";
@@ -33,20 +33,19 @@
 
 	eval ("\$result = \$T->".$method_call."(\$cmd_in, \$cmd_out);");
 	if ($result) {
-		if (! $cmd_out)
+		if (! $cmd_out) {
 			header('HTTP/1.1 204 No Content');
-		// Check if key is the enum field. if checked add "{key}.text" with text field.
-		foreach (reset($cmd_out) as $key => $value) {
-			// Si el campo es enum, para todos los valores del campo generamos el key.text 
-			if ($T->get_fieldType($key) == "enum") {
-				foreach ($cmd_out as $key_i => $value_i) {
-					$cmd_out[$key_i][$key."_text"] = $T->view_value_fields($key, $value_i[$key]);
-				}
-			}
+			echo "error";			
 		}
 		echo json_encode($cmd_out);
 	} else {
 		header('HTTP/1.1 405 Method Not Allowed');
 		echo "error";
 	}
+}
+catch (PDOException $e) {
+	header('HTTP/1.1 520 Unknown Error');
+	print 'Exception : ' . $e->getMessage();
+	echo "error";
+}
 ?>

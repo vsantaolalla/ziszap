@@ -1,13 +1,17 @@
-<?
-	error_reporting(E_ALL);
-	ini_set("display_startup_errors",1);
-	ini_set("display_errors",1);
-
-	require_once "config.php";
-	require_once "data_object/db.mysql.inc";
+<?php
+//	require_once "data_object/ag.object.inc";
+//	require_once 'data_object/o.form.inc';
 	require_once "data_object/o.module.inc";
-	require_once "data_object/o.console.inc";
+	if (isset($_GET["project"])) {
+		require_once "zz-admin/config.".$_GET["project"].".php";
+	} else {
+		require_once "zz-admin/config.php";
+	}
+	require_once "data_object/db.mysql.inc";
+	$path = $_SERVER["DOCUMENT_ROOT"];
 
+//	$go = new generical_object();
+//	$fg = new object_form();
 class rr extends database_object {
 	public $classname = "alertes";
 	function rr () {
@@ -22,7 +26,16 @@ class rr extends database_object {
 		parent::database_object($database_name."@".$db_host,$db_user,$db_passwd);
 	}
 }
+?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+	<title>Install object <?php echo $_GET["class"]; ?></title>
+</head>
 
+<body>
+<?php
+//	$dg = new database_object("conqrate@localhost","root","");
 	$dg = new rr();
 	foreach ($dg->list_tables() as $key => $value) {
 		$dg->table_struct($value["NAME"]);
@@ -31,9 +44,32 @@ class rr extends database_object {
 	
 	$p_input = Array();
 	$p_output = Array();
-	if (isset($_GET["class"])) {
-		$m->create_class($_GET["class"]);
-		$m->create_init($_GET["class"]);
-		$m->create_test($_GET["class"]);
+
+	$path_zzinterface = $path."/zz-interface/";
+	if ((! is_dir($path_zzinterface)) && ($path_zzinterface != "")) {
+		mkdir ($path_zzinterface);
 	}
+	
+	$path_object = $path."/zz-object/".$_GET["class"]."/thread/";
+	if ((! is_dir($path_object)) && ($path_object != "")) {
+		mkdir ($path_object);
+	}
+
+	$path_object = $path."/zz-object/".$_GET["class"]."/test/";
+	if ((! is_dir($path_object)) && ($path_object != "")) {
+		mkdir ($path_object);
+	}
+
+	$m->create_class($_GET["class"]);
+	$m->create_init($_GET["class"]);
+	// Creem la clase amb test
+	$m->create_class($_GET["class"], true);
+//	$m->shuttle($dg, "create_slot", $p_input, $p_output);
+//	$dg->explain_table("MODULS");
+//	print_r($dg->list_db_tables());
+	
+	
+//	print_r($fg->get_field("cacid"));
 ?>
+</body>
+</html>
