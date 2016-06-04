@@ -1,6 +1,4 @@
 <?php
-//	require_once "data_object/ag.object.inc";
-//	require_once 'data_object/o.form.inc';
 	require_once "data_object/o.module.inc";
 	if (isset($_GET["project"])) {
 		require_once "zz-admin/config.".$_GET["project"].".php";
@@ -10,8 +8,6 @@
 	require_once "data_object/db.mysql.inc";
 	$path = $_SERVER["DOCUMENT_ROOT"];
 
-//	$go = new generical_object();
-//	$fg = new object_form();
 class rr extends database_object {
 	public $classname = "alertes";
 	function rr () {
@@ -35,7 +31,6 @@ class rr extends database_object {
 
 <body>
 <?php
-//	$dg = new database_object("conqrate@localhost","root","");
 	$dg = new rr();
 	foreach ($dg->list_tables() as $key => $value) {
 		$dg->table_struct($value["NAME"]);
@@ -62,14 +57,7 @@ class rr extends database_object {
 
 	$m->create_class($_GET["class"]);
 	$m->create_init($_GET["class"]);
-	// Creem la clase amb test
 	$m->create_class($_GET["class"], true);
-//	$m->shuttle($dg, "create_slot", $p_input, $p_output);
-//	$dg->explain_table("MODULS");
-//	print_r($dg->list_db_tables());
-	
-	
-//	print_r($fg->get_field("cacid"));
 ?>
 </body>
 </html>
