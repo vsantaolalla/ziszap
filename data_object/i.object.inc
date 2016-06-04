@@ -705,6 +705,9 @@ abstract class Object {
 		
 		$table = implode(",", $SQL["table"]);
 		$sql = "DELETE FROM ".$table." WHERE ".$fieldsWHERE;
+		if ($this->profile) {
+			$this->profile_sql("sql_delete", $sql);
+		}
 		if ($func_debug) echo $sql."\n";
 
 		$qhandle = @mysqli_query($db_connhandle, $sql.";") or $this->object_error("sql_delete ".$table." failed");
