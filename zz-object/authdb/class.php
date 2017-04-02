@@ -4,11 +4,11 @@ require_once "data_object/i.object.inc";
 class z_authdb extends Object {
 	var $classname = "z_authdb";
 
-	protected	$usuid;	/** @var int ID usuario */
+	protected	$usuid;		/** @var int ID usuario */
 	protected	$usulgn;	/** @var varchar Nombre del usuario */
 	protected	$usupwd;	/** @var varchar Password del usuario */
 	protected	$usuema;	/** @var varchar E-Mail del usuario registrado */
-	protected	$grpid;	/** @var int ID grupo */
+	protected	$grpid;		/** @var int ID grupo */
 	protected	$grpnam;	/** @var varchar Nombre del grupo */
 	protected	$grpmem;	/** @var text Miembros del grupo */
 

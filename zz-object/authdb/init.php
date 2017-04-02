@@ -64,11 +64,11 @@ class authdb extends z_authdb {
         /**
         *
          * Funcion: add_member_to_list ... Añadir usuario al grupo
-         * @input       int             grpid   ID del grupo
+         * @input       int     grpid   ID del grupo
          * @input       varchar usulgn  Nombre del usuario
          * @input       varchar grpnam  Nombre del grupo
          * @input       text    grpmem  Miembros del grupo
-         * @output      int             grpid   ID del grupo
+         * @output      int     grpid   ID del grupo
          * @output      varchar grpnam  Nombre del grupo
          * @output      text    grpmem  Miembros del grupo
          *
@@ -98,11 +98,11 @@ class authdb extends z_authdb {
         /**
          *
          * Funcion: del_member_to_list ... Eliminar usuario al grupo
-         * @input       int             grpid   ID del grupo
+         * @input       int     grpid   ID del grupo
          * @input       varchar usulgn  Nombre del usuario
          * @input       varchar grpnam  Nombre del grupo
          * @input       text    grpmem  Miembros del grupo
-         * @output      int             grpid   ID del grupo
+         * @output      int     grpid   ID del grupo
          * @output      varchar grpnam  Nombre del grupo
          * @output      text    grpmem  Miembros del grupo
          *
