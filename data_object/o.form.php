@@ -8,7 +8,7 @@
 // de cada base de datos de data_object
 //
 
-require_once("data_object/ag.object.inc");
+require_once("data_object/ag.object.php");
 
 class object_form extends generical_object {
 //	var $classname = "object_form";

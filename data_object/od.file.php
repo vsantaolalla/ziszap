@@ -73,7 +73,7 @@ class file_object {
 		echo "<tr bgcolor='#EEEEEE'>";
 		echo "<td width='20' valign='top'><img src='rcrs/gif/error.gif' hspace='3'></td>";
 		echo "<td valign='middle'>";
-		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/od.file.inc&gt;</i> <b>$strFILEError</b></font><br><br>";
+		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/od.file.php&gt;</i> <b>$strFILEError</b></font><br><br>";
 		echo "<font face='Verdana,Arial' size=2><u>Function callback</u>:</font><br>";
 		for ($i=0; $i<count($func_backtrace); $i++){
 			echo "<font face='Verdana,Arial' size=2><i>&lt;$i&gt;</i> <b>".$func_backtrace[$i]["file"]."=>".$func_backtrace[$i]["function"]."(".$func_backtrace[$i]["line"].")</b>";

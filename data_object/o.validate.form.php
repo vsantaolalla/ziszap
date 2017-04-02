@@ -1,5 +1,5 @@
 <?php
-require_once "data_object/o.form.inc";
+require_once "data_object/o.form.php";
 
 class ValidateForm extends object_form {
 	public	$fieldsRequired = Array ();

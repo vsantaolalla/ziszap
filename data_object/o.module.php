@@ -8,7 +8,7 @@
 // a las funciones objeto gen�rico de cada base de datos de data_object.
 //
 
-require_once("data_object/ag.object.inc");
+require_once("data_object/ag.object.php");
 
 // Inicializacion variables de comprovación de los comandos SQL.
 $SQL_EXEC = Array();
@@ -119,10 +119,10 @@ class object_module extends generical_object {
 		$object_class = "z_".$object;
 		$data = "<?php \n";
 		if ($profile) {
-			$data .= "require_once \"data_object/i.thread.inc\";\n";
+			$data .= "require_once \"data_object/i.thread.php\";\n";
 			$data .= "class ".$object_class." extends Object_Thread {\n";
 		} else {
-			$data .= "require_once \"data_object/i.object.inc\";\n\n";
+			$data .= "require_once \"data_object/i.object.php\";\n\n";
 			$data .= "class ".$object_class." extends Object {\n";
 		}
 		
@@ -385,7 +385,7 @@ class object_module extends generical_object {
 
 			$data .= "\n";
 			if ($enable_acls_groups || $enable_acls_users) {
-				$data .= "\t\trequire_once \"data_object/o.users.inc\";\n";
+				$data .= "\t\trequire_once \"data_object/o.users.php\";\n";
 			}
 			if ($enable_acls_groups) {
 				$data .= "\t\t// Enable ACLS groups.\n";
@@ -564,7 +564,7 @@ class object_module extends generical_object {
 		$data .= "<?php \n";
 		$data .= "\trequire_once \"zz-content/header.form.php\";\n";
 		$data .= "\tinclude \"zz-object/".$object."/init.php\";\n";
-		$data .= "\trequire_once \"data_object/o.validate.form.inc\";\n\n";
+		$data .= "\trequire_once \"data_object/o.validate.form.php\";\n\n";
 		$data .= "\t\$data_in = \$_GET;\n";
 		$data .= "\t\$data_out = Array();\n\n";
 		$data .= "\tif (isset(\$data_in[\"func\"])) {\n";

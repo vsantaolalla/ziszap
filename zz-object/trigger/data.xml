@@ -2,7 +2,7 @@
 <fields>
 	<field name="trgid" type="int" cardinal="11" null="no" text="ID TRIGGER"/>
     <field name="trgnam" type="varchar" cardinal="30" null="no" text="Nombre de TRIGGER" />
-    <field name="trgtme" type="int" cardinal="11" null="no" text="Numero de segundos espera de TRIGGER"/>
+    <field name="trgtme" type="int" cardinal="11" null="no" text="Numero de segundos ejecucion del TRIGGER"/>
     <field name="trgevt" type="varchar" cardinal="50" null="no" text="Evento de TRIGGER" />
     <field name="trgact" type="varchar" cardinal="50" null="no" text="Accion de TRIGGER" />
 </fields>

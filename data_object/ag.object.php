@@ -27,7 +27,7 @@ class generical_object {
 	function generical_object () {
 		if (isset($this->classname)) {
 			$object = $this->classname;
-			require_once('data_object/od.xml.file.inc'); 
+			require_once('data_object/od.xml.file.php'); 
 			$parser = new xml_file_object("/zz-object/".$object."/data.xml");
 			$result = $parser->parse_xml_file();
 //			print_r($parser);
@@ -161,7 +161,7 @@ class generical_object {
 	
 	function get_external_field ($object, $field) {
 		$external_field = array();	
-		require_once('data_object/od.xml.file.inc'); 
+		require_once('data_object/od.xml.file.php'); 
 		$parser = new xml_file_object("/zz-object/".$object."/data.xml");
 		$result = $parser->parse_xml_file();
 		if (isset($parser->arrOutput[0]["FIELDS"][0]["FIELD"])) {
@@ -186,7 +186,7 @@ class generical_object {
 
 	function get_external_table ($object, $table) {
 		$external_table = array();	
-		require_once('data_object/od.xml.file.inc'); 
+		require_once('data_object/od.xml.file.php'); 
 		$parser = new xml_file_object("/zz-object/".$object."/data.xml");
 		$result = $parser->parse_xml_file();
 		if (isset($parser->arrOutput[0]["TABLES"][0]["TABLE"])) {
@@ -342,7 +342,7 @@ class generical_object {
 		echo "<tr bgcolor='#EEEEEE'>";
 		echo "<td width='20' valign='top'><img src='rcrs/gif/error.gif' hspace='3'></td>";
 		echo "<td valign='middle'>";
-		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/ag.object.inc&gt;</i> <b>$strFILEError</b></font><br><br>";
+		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/ag.object.php&gt;</i> <b>$strFILEError</b></font><br><br>";
 		echo "<font face='Verdana,Arial' size=2><u>Function callback</u>:</font><br>";
 		for ($i=0; $i<count($func_backtrace); $i++){
 			echo "<font face='Verdana,Arial' size=2><i>&lt;$i&gt;</i> <b>".$func_backtrace[$i]["file"]."=>".$func_backtrace[$i]["function"]."(".$func_backtrace[$i]["line"].")</b>";

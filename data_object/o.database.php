@@ -8,7 +8,7 @@
 // de cada base de datos de data_object
 //
 
-require_once("data_object/o.form.inc");
+require_once("data_object/o.form.php");
 
 abstract class generical_object_database extends object_form {
 //	var $classname = "generical_object_database";
@@ -121,7 +121,7 @@ abstract class generical_object_database extends object_form {
 		echo "<tr bgcolor='#EEEEEE'>";
 		echo "<td width='20' valign='top'><img src='rcrs/gif/error.gif' hspace='3'></td>";
 		echo "<td valign='middle'>";
-		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/o.database.inc&gt;</i> <b>$strFILEError</b></font><br><br>";
+		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/o.database.php&gt;</i> <b>$strFILEError</b></font><br><br>";
 		echo "<font face='Verdana,Arial' size=2><u>Function callback</u>:</font><br>";
 		for ($i=0; $i<count($func_backtrace); $i++){
 			echo "<font face='Verdana,Arial' size=2><i>&lt;$i&gt;</i> <b>".$func_backtrace[$i]["file"]."=>".$func_backtrace[$i]["function"]."(".$func_backtrace[$i]["line"].")</b>";

@@ -12,7 +12,7 @@ class xml_file_object {
 	}
 
 	function parse_xml_array() {
-		require_once("data_object/od.file.inc");
+		require_once("data_object/od.file.php");
 		$conditions_file = new file_object($this->filename);
 		$strInputXML = $conditions_file->file_get_contents();
 
@@ -34,7 +34,7 @@ class xml_file_object {
 	}
 
 	function parse_xml_file() {
-		require_once("data_object/od.file.inc");
+		require_once("data_object/od.file.php");
 		$conditions_file = new file_object($this->filename);
 		$strInputXML = $conditions_file->file_get_contents();
 
@@ -120,7 +120,7 @@ class xml_file_object {
 		echo "<tr bgcolor='#EEEEEE'>";
 		echo "<td width='20' valign='top'><img src='rcrs/gif/error.gif' hspace='3'></td>";
 		echo "<td valign='middle'>";
-		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/od.xml.file.inc&gt;</i> <b>$strFILEError</b></font><br><br>";
+		echo "<font face='Verdana,Arial' size=2><i>&lt;/data_object/od.xml.file.php&gt;</i> <b>$strFILEError</b></font><br><br>";
 		echo "</td>";
 		echo "</tr></table>";
 		echo "</td></tr></table>";
