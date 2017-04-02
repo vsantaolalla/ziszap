@@ -1,0 +1,31 @@
+<object name="trigger">
+<fields>
+	<field name="trgid" type="int" cardinal="11" null="no" text="ID TRIGGER"/>
+    <field name="trgnam" type="varchar" cardinal="30" null="no" text="Nombre de TRIGGER" />
+    <field name="trgtme" type="int" cardinal="11" null="no" text="Numero de segundos espera de TRIGGER"/>
+    <field name="trgevt" type="varchar" cardinal="50" null="no" text="Evento de TRIGGER" />
+    <field name="trgact" type="varchar" cardinal="50" null="no" text="Accion de TRIGGER" />
+</fields>
+
+<tables>
+	<table name="TRIGGER" fields="trgid,trgnam,trgtme,trgevt,trgact" pkey="trgid" ukey="trgid" />
+</tables>
+
+<methods>
+	<method name="register_trigger" object="trigger" function="create_object">
+		<input object="trigger" field="trgid" />
+		<store_output object="trigger" table="TRIGGER" action="create" field="trgid,trgnam,trgtme,trgevt,trgact" />
+	</method>
+	<method name="update_trigger" object="trigger" function="create_object">
+		<input object="trigger" field="trgid,trgnam,trgtme,trgevt,trgact" />
+		<store_output object="trigger" table="TRIGGER" action="update" field="trgid,trgnam,trgtme,trgevt,trgact" />
+	</method>
+	<method name="is_execute_triggers" object="trigger" function="execute_trigger">
+		<store_input object="trigger" table="TRIGGER" action="read" field="trgid,trgnam,trgtme,trgevt,trgact" />
+	</method>
+	<method name="unregister_trigger" object="trigger" function="delete_object">
+		<input object="trigger" field="trgid" />
+		<store_output object="trigger" table="TRIGGER" action="delete" field="trgid" />
+	</method>
+</methods>
+</object>
