@@ -1,6 +1,6 @@
 <?php
 
-require_once("data_object/o.database.php");
+require_once "data_object/o.database.php";
 
 class database_object extends generical_object_database {
 
@@ -8,13 +8,10 @@ class database_object extends generical_object_database {
 	var $sys_connhandle;
 	var $sys_dbhandle;
 
-	function database_object () {
+	function __construct () {
 		global $db_connhandle;
-		global $db_syshandle;
 
-		$this->sys_connhandle = $db_connhandle; 
-		$this->sys_dbhandle = $db_syshandle; 
-		parent::generical_object_database();
+		$this->sys_dbhandle = $db_connhandle; 
 	}
 
 	function explain_table ($n_table){
@@ -326,7 +323,7 @@ class database_object extends generical_object_database {
 	}
 
 	function db_mysql_die($strMySQLError) {
-		$this->object_error(mysql_error());
+		$this->object_error(mysqli_error());
 		exit;
 	}
 
@@ -337,8 +334,5 @@ class database_object extends generical_object_database {
 }
 
 if (!isset($db_connhandle))
-	$db_connhandle = @mysql_connect($db_host, $db_user, $db_passwd) or database_object::db_mysql_die("connect_server_database");;
-if (!isset($db_syshandle))
-	$db_syshandle = @mysql_select_db($database_name) or database_object::db_mysql_die("select_database");
-
+	$db_connhandle = @mysqli_connect($db_host, $db_user, $db_passwd, $database_name); // or database_object::db_mysql_die("connect_server_database");;
 ?>

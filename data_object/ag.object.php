@@ -24,7 +24,7 @@ class generical_object {
 	var $form_object;
 	var $fields_error;
 
-	function generical_object () {
+	function __construct () {
 		if (isset($this->classname)) {
 			$object = $this->classname;
 			require_once('data_object/od.xml.file.php'); 

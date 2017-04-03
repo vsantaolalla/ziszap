@@ -1002,7 +1002,5 @@ abstract class Object {
 
 if (!isset($db_connhandle))
 	$db_connhandle = @mysqli_connect($db_host, $db_user, $db_passwd, $database_name) or Object::object_error("connect_server_database");;
-//if (!isset($db_syshandle))
-//	$db_syshandle = @mysqli_select_db($db_connhandle, $database_name) or Object::object_error("select_database");
 
 ?>

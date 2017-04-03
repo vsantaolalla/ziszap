@@ -13,7 +13,7 @@ require_once("data_object/ag.object.php");
 class object_form extends generical_object {
 //	var $classname = "object_form";
 
-	function object_form () {
+	function __construct () {
 		parent::generical_object ();
 	}
 	

@@ -1,4 +1,8 @@
 <?php
+	// We are located in the parent directory
+	chdir('..');
+	ini_set('include_path', getcwd());
+
 	require_once "data_object/o.module.php";
 	if (isset($_GET["project"])) {
 		require_once "zz-admin/config.".$_GET["project"].".php";
@@ -13,7 +17,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-	<title>Install object <?php echo $_GET["class"]; ?></title>
+	<title>Install object</title>
 </head>
 
 <body>

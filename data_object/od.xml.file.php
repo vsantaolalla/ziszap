@@ -7,7 +7,7 @@ class xml_file_object {
 	var $strXmlData;
 	var $filename;
 
-	function xml_file_object ($name_file) {
+	function __construct ($name_file) {
 		$this->filename = $name_file;
 	}
 

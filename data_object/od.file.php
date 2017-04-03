@@ -25,7 +25,7 @@ class file_object {
 	var $classname = "file_object";
 	var $file_name;
 
-	function file_object($server_data){
+	function __construct($server_data){
 		$current_path = get_directory();
 
 		if (file_exists($current_path.$server_data)) {

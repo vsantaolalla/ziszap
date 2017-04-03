@@ -17,9 +17,6 @@ class object_module extends generical_object {
 //	var $classname = "object_module";
 
 	protected $profile;
-	function object_module () {
-		parent::generical_object ();
-	}
 	
 	function create_init ($object) {
 		$path = get_directory()."/zz-object/".$object."/init.php";

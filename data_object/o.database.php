@@ -13,7 +13,7 @@ require_once("data_object/o.form.php");
 abstract class generical_object_database extends object_form {
 //	var $classname = "generical_object_database";
 
-	function generical_object_database () {
+	function __construct () {
 		parent::object_form ();
 	}
 
